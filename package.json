@@ -1,0 +1,25 @@
+{
+  "name": "blockhain-trading-platform",
+  "version": "1.0.0",
+  "description": "Blockchain trading platform",
+  "main": "deploy.js",
+  "dependencies": {
+    "solc": "^0.4.24",
+    "web3": "^1.0.0-beta.34",
+    "web3_extended": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pieterDekker/blockhain-trading-platform.git"
+  },
+  "author": "Pieter + Alex",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pieterDekker/blockhain-trading-platform/issues"
+  },
+  "homepage": "https://github.com/pieterDekker/blockhain-trading-platform#readme"
+}
