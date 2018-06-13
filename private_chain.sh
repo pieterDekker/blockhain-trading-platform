@@ -30,7 +30,7 @@ then
 	echo "node name is: $HOST_NAME"
 	
 	#run the node and start a console to interact with it
-	geth --identity $HOST_NAME --gasprice "0" --minerthreads=2 --rpc --rpcport "8545" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "./private_chain" --port "30303" --nodiscover\
+	geth --identity $HOST_NAME --gasprice "0" --minerthreads=2 --rpc --datadir "./private_chain" --port "30303" --nodiscover\
 	--rpcapi "db,eth,net,web3,personal" --networkid 230594 console 2>>node_error
 elif [ "$arg" == "exec" ]
 	script_name = $2
@@ -39,7 +39,7 @@ elif [ "$arg" == "exec" ]
 		echo "running the chain and executing a script..."
 		echo "node name is: $HOST_NAME"
 
-		geth --identity $HOST_NAME --gasprice "0" --minerthreads=2 --rpc --rpcport "8545" --rpcaddr "0.0.0.0" --rpccorsdomain "*" --datadir "./private_chain" --port "30303" --nodiscover\
+		geth --identity $HOST_NAME --gasprice "0" --minerthreads=2 --rpc --rpcport "8545" --rpccorsdomain "*" --datadir "./private_chain" --port "30303" --nodiscover\
 		--rpcapi "db,eth,net,web3,personal" --networkid 230594 exec "loadScript(\"$script_name\")" attach 2>>node_error
 	else
 		echo "$script_name is not a file"
