@@ -1,42 +1,54 @@
-const fs = require('fs');
-const solc = require('solc');
-const Web3 = require('web3');
+const fs = require('fs'); //For filesystem interactions
+const solc = require('solc'); //For compiling solidity contracts
+const Web3 = require('web3'); //For interaction with an eth node
+
+//Find a running node on localhost
 let node = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 
-// console.log(node);
-
+//TODO calculate in the delay, event
 if (node === undefined) {
-	console.log("WARNING: no node object");
-} else if (node._provider.connected === false) {
-	console.log("WARNING: node object has node provider connection");
+	console.error("FATAL: no node object");
 }
 
-function compileContracts() {
-	let contracts = [
-		['bid.sol', 'contracts/bid.sol'],
-		['offer.sol', 'contracts/offer.sol'],
-		['demand.sol', 'contracts/demand.sol'],
-		['trader.sol', 'contracts/trader.sol']
-	];
-	let contractnames = [
-		'Bid',
-		'Offer',
-		'Demand',
-		'Trader'
-	];
+function checkUntilConnected () {
+	console.log("checking if connected...");
+	setTimeout(() => {
+		if (isNodeConnected(node)) {
+			console.log("connected");
+			return;
+		}
+		console.log("not yet connected....");
+		checkUntilConnected();
+	}, 500);
+}
 
-	let contractCodes = {}
+function isNodeConnected (node) {
+	if (node._provider.connected === false) {
+		console.error("WARNING: node object has node provider connection");
+		return false;
+	}
+	return true;
+}
 
-	contracts.forEach(element => {
-		console.log(element);
-		contractCodes[element[0]] = fs.readFileSync(element[1]).toString();
+/**
+ * Compiles the contracts in sourcedir, returns an object with ABIs, bytecodes and gas estimates. 
+ * 
+ * @param {string} sourcedir The directory containing the contracts to compile
+ * 
+ * @return {object} Contains compilation results, keyed by contract Name as defined inside the file
+ * @return {object.abi} The ABI of the compiled contract, should be used to create an instance
+ * @return {object.bytecode} The bytecode of the compiled contract, should be used for deployment
+ * @return {object.deployment_gas_estimate} An estimate of the gas cost for deployment
+ */
+function compileContracts(sourcedir) {
+	let contractfiles = {};
+	fs.readdirSync(sourcedir).forEach(file => {
+		if (file.substring(file.length - 4) === ".sol") {
+			contractfiles[file] = fs.readFileSync(sourcedir + "/" + file).toString();
+		}
 	});
 
-	console.log(contractCodes);
-
-	// contract_code = fs.readFileSync(file);
-	intermediate_output = solc.compile({sources: contractCodes}, 1);
-	console.log(intermediate_output);
+	intermediate_output = solc.compile({sources: contractfiles}, 1);
 	if (intermediate_output === undefined) {
 		console.log("Error, compilation of " + file + " failed");
 		return {};	
@@ -56,7 +68,12 @@ function compileContracts() {
 	return compiled_contracts;
 }
 
-
+/**
+ * Get an instance of a contract at address.
+ * 
+ * @param {object} abi 
+ * @param {string} address 
+ */
 function getContractInstance(abi, address = "") {
 	let contract;
 	if (address !== "") {
@@ -67,6 +84,13 @@ function getContractInstance(abi, address = "") {
 	return contract
 }
 
+/**
+ * Creates a transaction object for the deployment of a contract. Sending this transaction will send the bytecode and the arguments.
+ * 
+ * @param {string} bytecode 
+ * @param {object} abi 
+ * @param {Array} arguments 
+ */
 function getContractDeployTxObj(bytecode, abi, arguments) {
 	let contract = new node.eth.Contract(abi);
 
@@ -78,6 +102,15 @@ function getContractDeployTxObj(bytecode, abi, arguments) {
 	return txObj;
 }
 
+/**
+ * Sends the transaction to deploy a contract in the given transaction object.
+ * 
+ * @param {object} txObj 
+ * @param {string} account 
+ * @param {int} gas 
+ * @param {function} error_f The function to be called on error, should take a single string as argument
+ * @param {function} success_f The function to be called on success, should take a single receipt object as argument
+ */
 function sendContractDeployTxObj(txObj, account, gas, error_f, success_f) {
 	txObj.send({
 		from: account,
@@ -87,6 +120,9 @@ function sendContractDeployTxObj(txObj, account, gas, error_f, success_f) {
 	.on('receipt', success_f);
 }
 
+/**
+ * Gets the gasestimate for the transaction in the given transaction object, or error.
+ */
 function estimateGas(txObj, error_f, success_f) {
 	txObj.estimateGas({}, function(error, gasEstimate) {
 		if (error) {
@@ -97,13 +133,16 @@ function estimateGas(txObj, error_f, success_f) {
 	});
 }
 
+checkUntilConnected();
+
+//abi and 
 let bytecode = "0x" + fs.readFileSync('bin/Demand.bin');
 let abi = JSON.parse(fs.readFileSync('bin/Demand.abi'), {encoding: "utf-8"});
 
 let demandDeployTxObj = getContractDeployTxObj(bytecode, abi, [1,10,100000]);
 
 let estimate_error_f = function (error) {
-	console.log(error);
+	console.error(error);
 }
 
 let estimate_success_f = function (estimate) {
@@ -113,108 +152,25 @@ let estimate_success_f = function (estimate) {
 estimateGas(demandDeployTxObj, estimate_error_f, estimate_success_f);
 
 let senddeploy_error_f = function (error) {
-	console.log("Sending the contract deploying function failed");
-	console.log(error);
+	console.error("Sending the contract deploying function failed");
+	console.error(error);
 }
 
 let senddeploy_success_f = function (receipt) {
 	console.log("contract deployment successful, address: " + receipt.contractAddress);
 	console.log("pinging the contract name");
 	cInst = getContractInstance(abi, receipt.contractAddress);
-	// console.log(cInst);
 	cInst.methods.getName().call(function (error, name) {
 		if (!error) {
-			console.log(name);
+			console.error(name);
 		}
 	});
 }
 
-console.log(compileContracts());
-
-// console.log(node.eth.personal.unlockAccount("0xae7fed7156e6856f65f7a1a0318ec7ce639ba94c", "testaccount"));
 node.eth.personal.unlockAccount("0xae7fed7156e6856f65f7a1a0318ec7ce639ba94c", "testaccount")
 .then(function (_) {
 	sendContractDeployTxObj(demandDeployTxObj, "0xae7fed7156e6856f65f7a1a0318ec7ce639ba94c", 1000000000000, senddeploy_error_f, senddeploy_success_f);
 })
 .catch(function (error) {
-	console.log(error);
+	console.error(error);
 });
-
-
-// process.exit()
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// const account_address = "0xae7fed7156e6856f65f7a1a0318ec7ce639ba94c";
-// const account_passphrase = "testaccount";
-
-
-// let byte_code = "0x" + fs.readFileSync('bin/Demand.bin');
-// let abi = JSON.parse(fs.readFileSync('bin/Demand.abi'), {encoding: "utf-8"});
-
-// let contract = new node.eth.Contract(abi);
-// console.log("about to deploy");
-
-// console.log(node.eth.personal.unlockAccount(account_address, account_passphrase));
-
-// let txobj = contract.deploy({
-// 	data: byte_code,
-// 	arguments: [10, 1, 10000]
-// });
-
-// txobj.estimateGas({}, function (error, gasEstimate) {
-// 	if (error) {
-// 		console.log("gas price estimate error:");
-// 		console.log(error);
-// 	}
-// 	if (gasEstimate) {
-// 		console.log("estimated gas cost: " + gasEstimate);
-// 	}
-// });
-
-// txobj.send({
-// 	from: account_address,
-// 	gas: 100000000000000
-// }, function (error, txHash) {
-// 	console.log("general error:");
-// 	console.log(error);
-// 	console.log("general txHash:");
-// 	console.log(txHash);
-// }).on('error', function (error) {
-// 	console.log("error error:");
-// 	console.log(error);
-// }).on('transactionHash', function (txHash) {
-// 	console.log("txHash txHash:");
-// 	console.log(txHash);
-// }).on('receipt', function(receipt){
-// 	console.log("receipt receipt:")
-// 	console.log(receipt.contractAddress) // contains the new contract address
-//  }).on('confirmation', function(confirmationNumber, receipt) {
-// 	 if (confirmationNumber > 0) {
-// 		 process.exit();
-// 	 }
-// 	console.log("confirmation confirmationNumber:")
-// 	console.log(confirmationNumber);
-// 	console.log("confirmation receipt");
-// 	console.log(receipt);
-//  }).then(function(newContractInstance){
-// 	console.log("newContractInstance newContractInstance");
-// 	console.log(newContractInstance.options.address); // instance with the new contract address
-// 	newContractInstance.methods['getName']().call({from: account_address}, function(error, result) {
-// 		if (error) {
-// 			console.log("getName failed");
-// 			console.log(error);
-// 		}
-// 		if (result) {
-// 			console.log(result);
-// 		}
-// 	});
-
-// 	newContractInstance.methods.testReachability().call({from: account_address}, function(error, result) {
-// 		if (error) {
-// 			console.log("testReachability failed");
-// 			console.log(error);
-// 		}
-// 		if (result) {
-// 			console.log(result);
-// 		}
-// 	});
-//  });
