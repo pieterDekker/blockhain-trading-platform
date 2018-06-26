@@ -1,0 +1,1 @@
+[{"inputs":[{"name":"_offer","type":"address"},{"name":"_demand","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]

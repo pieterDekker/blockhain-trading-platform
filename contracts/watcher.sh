@@ -1,6 +1,10 @@
+#!/usr/bin/env bash
+echo "initially compiling abi and bin from chain/contracts/*.sol, overwriting in chain/bin"
+./compile.sh
+
 inotifywait -e close_write,moved_to,create -m . |
 while read -r directory events filename; do
-  echo "compiling abi and bin from ./contracts/*, overwriting in ./bin"
-  rm -r ../bin
-  solc --overwrite -o ../bin --abi --bin ./*.sol
+  echo "recompiling abi and bin from chain/contracts/*.sol, overwriting in chain/bin"
+  ./compile.sh
+  echo "###############################"
 done
