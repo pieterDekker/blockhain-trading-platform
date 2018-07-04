@@ -16,7 +16,7 @@ contract TradeAgreement {
 
     int volume_required;
     int volume_sent;
-//    update[] updates;
+    int unit_price;
 
     constructor (address _offer, address _demand) public {
         //Set offer and demand addresses
@@ -51,4 +51,30 @@ contract TradeAgreement {
     //     volume_sent += updates[update_number];
     //     updates[update_number] = 0;
     // }
+    
+    function getDetails () public view returns (
+        int _volume_required, 
+        int _volume_sent, 
+        int _unit_price, 
+        address _sender, 
+        address _receiver, 
+        address _offer,
+        address _demand
+        ) {
+        return (
+            volume_required,
+            volume_sent,
+            unit_price,
+            sender,
+            receiver,
+            offer,
+            demand
+        );
+    }
+
+    string private name = "trade agreement";
+    
+    function getName() public view returns (string) {
+        return name;
+    }
 }

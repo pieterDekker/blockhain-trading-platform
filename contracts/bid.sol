@@ -30,7 +30,7 @@ contract Bid {
     function getOwner () public view returns (address _owner) {
         return owner;
     }
-
+    
     /**
         Allow only the owner to set the volume of this bid.
      */

@@ -5,7 +5,8 @@
    "chainID": 230594,
    "homesteadBlock": 0,
    "eip155Block": 0,
-   "eip158Block": 0
+   "eip158Block": 0,
+   "ByzantiumBlock": 0
  },
  "nonce": "0x0000000000000000",
  "difficulty": "0x0400",

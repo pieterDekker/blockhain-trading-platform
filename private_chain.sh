@@ -30,7 +30,7 @@ then
 	echo "node name is: $HOST_NAME"
 	
 	#run the node and start a console to interact with it
-	geth --identity $HOST_NAME --gasprice "0" --minerthreads=2 --rpc --datadir "./private_chain" --port "30303" --nodiscover\
+	geth --identity $HOST_NAME --gasprice "0" --rpc --datadir "./private_chain" --port "30303" --nodiscover\
 	--rpcapi "db,eth,net,web3,personal" --networkid 230594 console 2>>node_error
 elif [ "$arg" == "exec" ]
 	script_name = $2

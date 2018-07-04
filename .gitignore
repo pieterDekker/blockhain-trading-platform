@@ -1,4 +1,5 @@
 /node_modules/
 /private_chain/
 node_error
+node_output
 .idea
