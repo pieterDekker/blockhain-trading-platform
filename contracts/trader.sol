@@ -21,8 +21,8 @@ contract Trader {
     mapping (address => bool) send_agreements_m;
     mapping (address => bool) recv_agreements_m;
 
-    constructor (string _name) public {
-        owner = msg.sender;
+    constructor (string _name, address _owner) public {
+        owner = _owner;
         name = _name;
     }
 
