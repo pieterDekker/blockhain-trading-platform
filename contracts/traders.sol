@@ -9,6 +9,9 @@ contract Traders {
     //Collection of traders
     address[] traders;
 
+    //Collection of accounts
+    address[] accounts;
+
     //Maps accounts to their associated traders
     mapping (address => address) traderForAccount;
 
@@ -17,6 +20,7 @@ contract Traders {
 
     function newTrader(string name) public {
         address account = msg.sender;
+
         //Check if the account already has a trader
         require(!accountUsed[account], "Account already used");
         accountUsed[account] = true;
@@ -24,10 +28,15 @@ contract Traders {
         traderForAccount[account] = trader;
         traderName[trader] = name;
         traders.push(trader);
+        accounts.push(account);
     }
 
     function getTraders() public view returns (address[]) {
         return traders;
+    }
+
+    function getAccounts() public view returns (address[]) {
+        return accounts;
     }
 
     function accountHasTrader(address _account) public view returns (bool) {
