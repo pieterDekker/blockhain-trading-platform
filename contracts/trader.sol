@@ -1,7 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "./offer.sol";
-import "./demand.sol";
 import "./trade_agreement.sol";
 
 contract Trader {
@@ -27,34 +25,34 @@ contract Trader {
     }
 
     function deployOffer(int _volume, int _price_per_unit, uint _expiration_time) public {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         address offer = new Offer(_volume, _price_per_unit, _expiration_time);
         offers.push(offer);
     }
     
     function deployDemand(int _volume, int _price_per_unit, uint _expiration_time) public {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         address demand = new Demand(_volume, _price_per_unit, _expiration_time);
         demands.push(demand);
     }
 
     function deployTradeAgreement(address _offer, address _demand) public {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         new TradeAgreement(_offer, _demand);
     }
 
     function getOffers() public view returns (address[]) {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         return offers;
     }
 
     function getDemands() public view returns (address[]) {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         return demands;
     }
 
     function getName() public view returns (string) {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         return name;
     }
 
@@ -69,12 +67,12 @@ contract Trader {
     }
 
     function getSendAgreements() public view returns (address[]) {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         return send_agreements_l;
     }
 
     function getReceiveAgreements() public view returns (address[]) {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Sender is not owner");
         return recv_agreements_l;
     }
 }
