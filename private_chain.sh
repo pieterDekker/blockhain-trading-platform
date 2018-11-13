@@ -31,9 +31,9 @@ then
 	
 	#run the node and start a console to interact with it
 	geth --identity $HOST_NAME --gasprice "0" --rpc --datadir "./private_chain" --port "30303" --nodiscover\
-	--rpcapi "db,eth,net,web3,personal" --networkid 230594 console 2>>node_error
+	--rpcapi "db,eth,net,web3,personal,miner" --networkid 230594 console 2>>node_error
 else
-	echo "Usage: private_chain [init|run|exec <script_name>]"
+	echo "Usage: private_chain [init|run]"
 	echo "	init: create and initialize a new chain"
 	echo "	run: run an already initialized chain"
 	echo "	exec: execute the provided script_name"
