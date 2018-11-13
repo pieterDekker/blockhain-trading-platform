@@ -14,29 +14,45 @@ let testDir = './test';
 let contractDir = './contracts';
 let testAccount = "0x47681d90a3b1b044980c39ed1e32d160a8043ceb";
 let testPassword = "testaccount";
-let gasAmount = 1000000000000;
+let gasAmount = 100000000000;
 
-let result = {finished_tests: 0, expected_tests: 0};
+// let result = {finished_tests: 0, expected_tests: 0};
+let result = [];
 
-let names = [];
+let fileNames = {};
 
-function logFail(string) {
-    console.log("\t" + log_sym.error, chalk.red(string));
+/**
+ * Log a failed assertion.
+ *
+ * @param {String} message
+ */
+function logFail(message) {
+    console.log("\t" + log_sym.error, chalk.red(message));
 }
 
-function logWarning(string) {
-    console.log(log_sym.warning, chalk.yellow(string));
+/**
+ * Log a warning message about test results.
+ *
+ * @param {String} message
+ */
+function logWarning(message) {
+    console.log(log_sym.warning, chalk.yellow(message));
 }
 
-function logPass(string) {
-    console.log("\t" + log_sym.success, chalk.green(string));
+/**
+ * Log a passed assertion.
+ *
+ * @param {String} message
+ */
+function logPass(message) {
+    console.log("\t" + log_sym.success, chalk.green(message));
 }
 
 /**
  *
  * @param {string} propertyName
  * @param {Object} testModule
- * @return {boolean} True if testmModule.propertyName is a function an starts with 'test'
+ * @return {boolean} True if testModule.propertyName is a function and starts with 'test'
  */
 function isTestFunction(propertyName, testModule) {
     return propertyName.indexOf('test') === 0 && testModule[propertyName] instanceof Function;
@@ -59,7 +75,7 @@ function getTestFunctions(testModule) {
 }
 
 /**
- * Extracts the name of a contract function a test function corresponds to
+ * Extracts the name of a contract function a test function corresponds to.
  *
  * @param testFuncName
  * @return {string}
@@ -74,40 +90,48 @@ function getContractFuncName(testFuncName) {
 /**
  * Check that the test for a certain function is finished,i.e.: all assertions completed or an error occurred.
  *
+ * @param fileName
  * @param functionName
  * @return {boolean}
  */
-function testFinished(functionName) {
-    return result[functionName].assertions.length === result[functionName].assertions_expected ||
-        result[functionName].errors.length > 0;
+function testFinished(fileName, functionName) {
+    return result[fileName][functionName].assertions.length === result[fileName][functionName].assertions_expected ||
+        result[fileName][functionName].errors.length > 0;
 }
 
 /**
  * Check that all tests for a module are finished.
  *
+ * @param fileName
  * @return {boolean}
  */
-function testModuleFinished() {
-    return result.expected_tests == result.finished_tests;
+function testModuleFinished(fileName) {
+    return result[fileName].expected_tests === result[fileName].finished_tests;
 }
 
 /**
  * Perform post test actions.
+ *
+ * @param fileName
  */
-function postTest() {
-    if (testModuleFinished()) {
-        drawReport()
+function postTest(fileName) {
+    // console.log(result);
+    // console.log("");
+    // console.log("");
+    if (testModuleFinished(fileName)) {
+        drawReport(fileName)
     }
 }
 
 /**
  * Register an expected test with name and number of expected assertions.
  *
+ * @param fileName
  * @param functionName
  * @param num_assertions
  */
-function expectTest(functionName, num_assertions) {
-    result[functionName] = {
+function expectTest(fileName, functionName, num_assertions) {
+    result[fileName][functionName] = {
         assertions_expected: num_assertions,
         assertions: [],
         errors: []
@@ -117,43 +141,51 @@ function expectTest(functionName, num_assertions) {
 /**
  * Register a passed assertion for a test.
  *
+ * @param fileName
  * @param functionName
  * @param message
  */
-function pass(functionName, message) {
-    result[functionName].assertions.push({status: PASSED, message: message});
-    if (testFinished(functionName)) {
-        result.finished_tests += 1;
+function pass(fileName, functionName, message) {
+    result[fileName][functionName].assertions.push({status: PASSED, message: message});
+    if (testFinished(fileName, functionName)) {
+        result[fileName].finished_tests += 1;
+        // console.log("finished " + functionName);
     }
-    postTest();
+    postTest(fileName);
 }
 
 /**
  * Register a failed assertion for a test.
  *
+ * @param fileName
  * @param functionName
  * @param message
  */
-function fail(functionName, message) {
-    result[functionName].assertions.push({status:FAILED, message: message});
-    if (testFinished(functionName)) {
-        result.finished_tests += 1;
+function fail(fileName, functionName, message) {
+    result[fileName][functionName].assertions.push({status:FAILED, message: message});
+    if (testFinished(fileName, functionName)) {
+        result[fileName].finished_tests += 1;
+        // console.log("finished " + functionName);
     }
-    postTest();
+    postTest(fileName);
 }
 
 /**
  * Register an error that occurred during a test.
+ *
+ * @param fileName
  * @param functionName
  * @param error
  */
-function error(functionName, error) {
-    result[functionName].errors.push(error);
-    postTest();
+function error(fileName, functionName, error) {
+    result[fileName][functionName].errors.push(error);
+    // console.log("error in " + functionName);
+    postTest(fileName);
 }
 
 /**
  * Run all the test found in testModule on contractInstance.
+ *
  * @param testModule
  * @param contractInstance
  */
@@ -166,44 +198,63 @@ function runTests(testModule, contractInstance) {
     testModule.setGasAmount(gasAmount);
     //run each testFunction
     let testFunctions = getTestFunctions(testModule);
-    result.expected_tests = testFunctions.length;
+
+    result[testModule.fileName] = {
+        expected_tests: testFunctions.length,
+        finished_tests: 0
+    };
+    fileNames[testModule.fileName] = [];
     for (let testFuncName of testFunctions) {
         let contractFuncName = util.upperToLowerCamelCase(getContractFuncName(testFuncName));
 
-        names.push(contractFuncName);
+        fileNames[testModule.fileName].push(contractFuncName);
         try {
             testModule[testFuncName](contractInstance);
         } catch (error) {
             console.log("Unexpected error while testing " + contractFuncName + ": " + error.message);
+            console.log(error);
         }
     }
 }
 
 /**
- * Draw up a report of all the tests in the module currently under test.
+ * Draw up a report of all the results of tests in the given module.
+ *
+ * @param {String} fileName
  */
-function drawReport() {
+function drawReport(fileName) {
     // console.log(result);
-    let had_errors;
-    for (let name of names) {
-        console.log("Tested " + name + ":");
-        for (let assertion of result[name].assertions) {
-            if (assertion.status === PASSED) {
-                logPass(assertion.message)
-            } else {
-                logFail(assertion.message)
-            }
-        }
-        for (let error of result[name].errors) {
-            had_errors = true;
-            console.log(error);
-        }
+
+    // for (let fileName of Object.keys(fileNames)) {
+        let file = fileNames[fileName];
         console.log("");
-    }
-    if (had_errors) {
-        logWarning("There were errors. Reporting is not reliable.");
-    }
+        console.log("Tested " + file.length + " functions for " + fileName + ". Results:");
+        let had_errors;
+        for (let functionName of file) {
+            console.log("Tested " + functionName + ":");
+            for (let assertion of result[fileName][functionName].assertions) {
+                if (assertion.status === PASSED) {
+                    logPass(assertion.message)
+                } else {
+                    logFail(assertion.message)
+                }
+            }
+            for (let error of result[fileName][functionName].errors) {
+                had_errors = true;
+                console.log(error);
+            }
+            console.log("");
+        }
+        if (had_errors) {
+            logWarning("There were errors in tests for " + fileName + ". Reporting is not reliable.");
+        }
+    // }
+
 }
+
+console.log("SolTest 0.1");
+console.log("A minimalist, project specific testing framework for Ethereum smart contracts written in solidity");
+console.log("Author: Pieter Dekker");
 
 //For each file found in the testDirectory
 fs.readdirSync(testDir).forEach(file_name => {
@@ -237,15 +288,20 @@ fs.readdirSync(testDir).forEach(file_name => {
         .then(() => {
             contract
                 .deploy({
-                data: compiled.bytecode,
-                arguments: testModule.arguments
+                    data: compiled.bytecode,
+                    arguments: testModule.constructor_arguments
                 })
                 .send({
-                from: testAccount,
-                gas: gasAmount
+                    from: testAccount,
+                    gas: gasAmount
                 })
                 .then(contractInstance => {
-                    runTests(testModule, contractInstance);
+                    try{
+                        runTests(testModule, contractInstance);
+                    } catch (error) {
+                        console.log("Unexpected error in runTests for " + testModule.fileName + ": " + error.message);
+                        console.log(error);
+                    }
                 })
                 .catch(error => {
                     console.log("Could not deploy contract from " + file_name + ": " + error.message);

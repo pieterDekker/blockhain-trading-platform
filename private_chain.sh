@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 HOST_NAME=$(hostname)
 
 # Explanation of arguments to geth command
