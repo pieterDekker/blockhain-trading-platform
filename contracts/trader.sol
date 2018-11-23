@@ -8,4 +8,8 @@ contract Trader {
         owner = msg.sender;
         name = _name;
     }
+
+    function getName() public view returns (string) {
+        return name;
+    }
 }
