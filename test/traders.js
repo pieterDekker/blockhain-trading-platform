@@ -141,7 +141,7 @@ function testNewTrader(contract) {
     expect_f(fileName, fn, 4);
     contract.methods.newTrader("TestTrader").send({from: account, gas: gasAmount})
         .then(() => {
-            assertTrue(true, fn, "New trader receipt");
+            assertTrue(true, fn, "newTrader receipt");
             contract.methods.accountHasTrader(account).call()
                 .then(has_trader => {
                     assertTrue(has_trader, fn, "Account has trader returns " + has_trader)
@@ -172,9 +172,6 @@ function testNewTrader(contract) {
 }
 
 module.exports = {
-    testMetaTest: testMetaTest,
-    testGetName: testGetName,
-    testNewTrader: testNewTrader,
     constructor_arguments: constructor_arguments,
     fileName: fileName,
     includes: includes,
@@ -183,5 +180,8 @@ module.exports = {
     setExpect: setExpect,
     setError: setError,
     setAccount: setAccount,
-    setGasAmount: setGasAmount
+    setGasAmount: setGasAmount,
+    testMetaTest: testMetaTest,
+    testGetName: testGetName,
+    testNewTrader: testNewTrader
 };
