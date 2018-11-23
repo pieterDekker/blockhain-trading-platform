@@ -14,7 +14,7 @@ HOST_NAME=$(hostname)
 # - init			: The command to geth that is going to make this a new initialization, instead of starting up an existing chain. 
 # 					  Is followed by the location of the genesis json file
 # - console			: The command to run the node and start the interaction console
-
+	
 arg=$1
 
 if [ "$arg" == "init" ] 
