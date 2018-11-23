@@ -12,7 +12,7 @@ let node = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 // const web3_utils = node.utils;
 let testDir = './test';
 let contractDir = './contracts';
-let testAccount = "0x47681d90a3b1b044980c39ed1e32d160a8043ceb";
+let testAccount = "0x47681d90A3B1B044980c39ed1e32D160a8043Ceb";
 let testPassword = "testaccount";
 let gasAmount = 100000000000;
 
@@ -115,9 +115,6 @@ function testModuleFinished(fileName) {
  * @param fileName
  */
 function postTest(fileName) {
-    // console.log(result);
-    // console.log("");
-    // console.log("");
     if (testModuleFinished(fileName)) {
         drawReport(fileName)
     }
@@ -179,7 +176,6 @@ function fail(fileName, functionName, message) {
  */
 function error(fileName, functionName, error) {
     result[fileName][functionName].errors.push(error);
-    // console.log("error in " + functionName);
     postTest(fileName);
 }
 
@@ -198,7 +194,6 @@ function runTests(testModule, contractInstance) {
     testModule.setGasAmount(gasAmount);
     //run each testFunction
     let testFunctions = getTestFunctions(testModule);
-
     result[testModule.fileName] = {
         expected_tests: testFunctions.length,
         finished_tests: 0
@@ -223,32 +218,30 @@ function runTests(testModule, contractInstance) {
  * @param {String} fileName
  */
 function drawReport(fileName) {
-    // console.log(result);
-
-    // for (let fileName of Object.keys(fileNames)) {
-        let file = fileNames[fileName];
-        console.log("");
-        console.log("Tested " + file.length + " functions for " + fileName + ". Results:");
-        let had_errors;
-        for (let functionName of file) {
-            console.log("Tested " + functionName + ":");
-            for (let assertion of result[fileName][functionName].assertions) {
-                if (assertion.status === PASSED) {
-                    logPass(assertion.message)
-                } else {
-                    logFail(assertion.message)
-                }
+    let file = fileNames[fileName];
+    console.log("");
+    console.log("Tested " + file.length + " functions for " + fileName + ". Results:");
+    let had_errors;
+    for (let functionName of file) {
+        console.log("Tested " + functionName + ":");
+        for (let assertion of result[fileName][functionName].assertions) {
+            if (assertion.status === PASSED) {
+                logPass(assertion.message)
+            } else {
+                logFail(assertion.message)
             }
-            for (let error of result[fileName][functionName].errors) {
-                had_errors = true;
-                console.log(error);
-            }
+        }
+        for (let error of result[fileName][functionName].errors) {
+            had_errors = true;
+            console.log("An error occurred in " + functionName + " of " + fileName);
+            console.log(error);
             console.log("");
         }
-        if (had_errors) {
-            logWarning("There were errors in tests for " + fileName + ". Reporting is not reliable.");
-        }
-    // }
+        console.log("");
+    }
+    if (had_errors) {
+        logWarning("There were errors in tests for " + fileName + ". Reporting is not reliable.");
+    }
 
 }
 
@@ -256,10 +249,9 @@ console.log("SolTest 0.1");
 console.log("A minimalist, project specific testing framework for Ethereum smart contracts written in solidity");
 console.log("Author: Pieter Dekker");
 
-//For each file found in the testDirectory
-fs.readdirSync(testDir).forEach(file_name => {
+function prepareTest(fileName) {
     //Load the test module
-    let testModule = require(testDir + '/' + file_name);
+    let testModule = require(testDir + '/' + fileName);
 
     //Compile the contract under test in testModule
     var compiled;
@@ -281,15 +273,22 @@ fs.readdirSync(testDir).forEach(file_name => {
         return;
     }
 
-    //Create a new contract instance
-    let contract = new node.eth.Contract(compiled.abi);
+    return {
+        module: testModule,
+        contract: new node.eth.Contract(compiled.abi),
+        bytecode: compiled.bytecode
+    }
+}
 
+function unlockAndRun(test, fileName) {
+    // console.log(test);
     util.unlockAccount(node, testAccount, testPassword)
         .then(() => {
-            contract
+            // console.log(test.bytecode)
+            test.contract
                 .deploy({
-                    data: compiled.bytecode,
-                    arguments: testModule.constructor_arguments
+                    data: test.bytecode,
+                    arguments: test.module.constructor_arguments
                 })
                 .send({
                     from: testAccount,
@@ -297,19 +296,39 @@ fs.readdirSync(testDir).forEach(file_name => {
                 })
                 .then(contractInstance => {
                     try{
-                        runTests(testModule, contractInstance);
+                        runTests(test.module, contractInstance);
                     } catch (error) {
-                        console.log("Unexpected error in runTests for " + testModule.fileName + ": " + error.message);
+                        console.log("Unexpected error in runTests for " + test.module.fileName + ": " + error.message);
                         console.log(error);
                     }
                 })
                 .catch(error => {
-                    console.log("Could not deploy contract from " + file_name + ": " + error.message);
+                    console.log("Could not deploy contract from " + fileName + ": " + error.message);
                     console.log(error);
                 });
         })
         .catch(error => {
             console.log("Could not unlock account: " + error.message);
         });
-});
-// console.log("Done reading");
+}
+
+if (process.argv.length > 2) {
+    for (i = 2; i < process.argv.length; i++) {
+        let fileName = process.argv[i];
+        if (fs.existsSync(testDir + '/' + fileName)) {
+            console.log("Running tests in " + fileName);
+            let test = prepareTest(fileName);
+            unlockAndRun(test, fileName);
+        } else {
+            console.log("could not find " + fileName + " in " + testDir);
+        }
+    }
+    
+} else {
+    //For each file found in the testDirectory
+    console.log("running all tests in /test");
+    fs.readdirSync(testDir).forEach(file_name => {
+        let test = prepareTest(file_name);
+        unlockAndRun(test, file_name);
+    });
+}
