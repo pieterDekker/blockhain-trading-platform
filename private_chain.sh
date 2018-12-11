@@ -17,7 +17,7 @@ HOST_NAME=$(hostname)
 	
 arg=$1
 
-if [ "$arg" == "init" ] 
+if [[ "$arg" == "init" ]]
 then
 	echo "initializing the chain..."
 	echo "node name is: $HOST_NAME"
@@ -25,7 +25,18 @@ then
 	#init the chain, create genesisblock etc.
 	geth --identity $HOST_NAME --gasprice "0" --rpc --rpcport "8545" --rpccorsdomain "http://localhost:8545" --datadir "./private_chain" --port "30303" --nodiscover\
 	 --rpcapi "db,eth,net,web3,personal" --networkid 230594 init $PWD"/chain_init_data/genesis_json" 2>>node_error | tee -a node_output
-elif [ "$arg" == "run" ]
+elif [[ "$arg" == "reinit" ]]
+then
+    echo "removing old chain"
+    rm -r $PWD/private_chain/
+    rm $PWD/node_error $PWD/node_output
+	echo "reinitializing the chain..."
+	echo "node name is: $HOST_NAME"
+	#init the chain, create genesisblock etc.
+	geth --identity $HOST_NAME --gasprice "0" --rpc --rpcport "8545" --rpccorsdomain "http://localhost:8545" --datadir "./private_chain" --port "30303" --nodiscover\
+	 --rpcapi "db,eth,net,web3,personal" --networkid 230594 init $PWD"/chain_init_data/genesis_json" 2>>node_error | tee -a node_output
+	cp $PWD/chain_init_data/UTC--2018-06-26T03-59-03.509883478Z--47681d90a3b1b044980c39ed1e32d160a8043ceb $PWD/private_chain/keystore/
+elif [[ "$arg" == "run" ]]
 then
 	echo "running the chain and starting a console..."
 	echo "node name is: $HOST_NAME"
@@ -34,8 +45,9 @@ then
 	geth --identity $HOST_NAME --gasprice "0" --rpc --datadir "./private_chain" --port "30303" --nodiscover\
 	--rpcapi "db,eth,net,web3,personal,miner" --networkid 230594 console 2>>node_error
 else
-	echo "Usage: private_chain [init|run]"
+	echo "Usage: private_chain [init|reinit|run]"
+
 	echo "	init: create and initialize a new chain"
+	echo "	init: remove a previously created chain, reinitialize a new chain and continue with old account"
 	echo "	run: run an already initialized chain"
-	echo "	exec: execute the provided script_name"
 fi

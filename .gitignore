@@ -5,3 +5,4 @@ node_output
 .idea
 bin/
 /ipfs
+go-ethereum
