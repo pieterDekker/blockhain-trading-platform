@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const w3u = (new Web3()).utils;
 const util = require('../test_util');
+const kp = require('keypair');
 
 let fileName = 'bids.sol';
 
@@ -127,44 +128,41 @@ function testGetName(contract) {
         });
 }
 
-function testGetLauncher(contract) {
-	let fn = "getLauncher";
-	expect_f(fileName, fn, 1);
-	contract.methods.getLauncher().call()
-		.then(launcher => {
-			assertTrue(launcher === account, fn, "Launcher should be " + account + " is " + launcher);
-		})
-		.catch(error => {
-			error_f(error);
-		});
-}
-
 function testNewBid(contract) {
 	let fn = "newBid";
 	expect_f(fileName, fn, 6);
 
-	const ipfs = require('../ipfs-util');
+	const ipfs = require('../ipfs_util');
 	ipfs.getNode()
 		.then(async (ipfs_node) => {
+			/** @type {Bid} */
 			let bid = {
 				type : 0,
 				unit_price : 1,
 				volume : 2,
-				expires : 3
+				expires : 3,
+				owner: account
 			};
+			// let key_pair = await util.generateKeyPair();
+			let keyPair = kp();
+			ipfs.addPublicKey(account, keyPair.public);
+			// console.log('bid:');
+			// console.log(bid);
 
-			let ipfs_file = await ipfs.storeObject(ipfs_node, bid);
-			let ipfs_file_id_bytes = util.stringToBytes(ipfs_file[0].path);
+			let ipfs_file = await ipfs.storeBid(ipfs_node, bid, keyPair.private);
+			let ipfs_file_id_bytes = util.stringToBytes(ipfs_file.path);
 
-			contract.methods.newBid(ipfs_file_id_bytes, bid.type, bid.unit_price, bid.volume, bid.expires).send({from: account, gas: gasAmount})
+			contract.methods.newBid(ipfs_file_id_bytes).send({from: account, gas: gasAmount})
 				.then(async (receipt) => {
 					pass_f(fileName, fn, "newBid receipt");
 					contract.methods.getBid(receipt.events.NewBid.returnValues.index).call()
-						.then(async returns => {
-							let getBid_ipfs_file_id = util.byteStringToString(returns.ipfs_file_id);
-							assertTrue(getBid_ipfs_file_id === ipfs_file[0].path, fn, "ipfs file id should be " + ipfs_file[0].path + ", is " + getBid_ipfs_file_id);
+						.then(async ipfs_file_id_bytes => {
+							let getBid_ipfs_file_id = util.byteStringToString(ipfs_file_id_bytes);
+							assertTrue(getBid_ipfs_file_id === ipfs_file.path, fn, "ipfs file id should be " + ipfs_file.path + ", is " + getBid_ipfs_file_id);
 
-							let retrieved_bid = (await ipfs.retrieveObject(ipfs_node, getBid_ipfs_file_id))[0];
+							// let retrieved_bid = (await ipfs.retrieveObject(ipfs_node, getBid_ipfs_file_id))[0];
+							let retrieved_bid = await ipfs.retrieveBid(ipfs_node, getBid_ipfs_file_id);
+							// console.log(retrieved_bid);
 							assertTrue(retrieved_bid.type === bid.type, fn, "retrieved bid type should be " + bid.type + ", is " + retrieved_bid.type);
 							assertTrue(retrieved_bid.unit_price === bid.unit_price, fn, "retrieved bid type should be " + bid.unit_price + ", is " + retrieved_bid.unit_price);
 							assertTrue(retrieved_bid.volume === bid.volume, fn, "retrieved bid type should be " + bid.volume + ", is " + retrieved_bid.volume);
@@ -172,6 +170,7 @@ function testNewBid(contract) {
 							ipfs_node.stop();
 						})
 						.catch(error => {
+							console.log(error);
 							ipfs_node.stop();
 							error_f(fileName, fn, error);
 						})
@@ -196,6 +195,5 @@ module.exports = {
     setAccount: setAccount,
     setGasAmount: setGasAmount,
 	testGetName: testGetName,
-    testGetLauncher: testGetLauncher,
     testNewBid: testNewBid
 };
