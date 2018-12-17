@@ -10,6 +10,8 @@ let ipfs_node = new Ipfs({repo: './ipfs'});
 
 let publicKeys = {};
 
+let privateKey = "";
+
 function addPublicKey(account, key) {
 	if (account in publicKeys) throw new Error(account + " already has a public key registered");
 	publicKeys[account] = key;
@@ -18,6 +20,14 @@ function addPublicKey(account, key) {
 function getPublicKey(account) {
 	if (!(account in publicKeys)) throw new Error(account + " does not yet have a public key registered");
 	return publicKeys[account];
+}
+
+function setPrivateKey(key) {
+	privateKey = key;
+}
+
+function getPrivateKey() {
+	return privateKey;
 }
 
 /**
@@ -98,6 +108,19 @@ async function retrieveObject(ipfs, ipfsPath) {
  */
 
 /**
+ * @typedef {Object} TradeAgreement
+ * @property {string} offerer
+ * @property {string} demander
+ * @property {string} offer_file
+ * @property {Number} offer_id
+ * @property {string} demand_file
+ * @property {Number} demand_id
+ * @property {Number} unit_price
+ * @property {Number} volume
+ * @property {Number} end_date
+ */
+
+/**
  * @typedef {Object} IpfsBid
  * @property {Number} type
  * @property {Number} unit_price
@@ -105,6 +128,20 @@ async function retrieveObject(ipfs, ipfsPath) {
  * @property {Number} expires
  * @property {string} owner
  * @property {string} signature
+ */
+
+/**
+ * @typedef {Object} IpfsTradeAgreement
+ * @property {string} offerer
+ * @property {string} demander
+ * @property {string} offer_file
+ * @property {Number} offer_id
+ * @property {string} demand_file
+ * @property {Number} demand_id
+ * @property {Number} unit_price
+ * @property {Number} volume
+ * @property {Number} end_date
+ * @property {string} leader_signature
  */
 
 /**
@@ -123,6 +160,24 @@ function bidToSignatureString(bid) {
 
 /**
  *
+ * @param {TradeAgreement} tradeAgreement
+ * @return {string}
+ */
+function tradeAgreementToSignatureString(tradeAgreement) {
+	return "" +
+		JSON.stringify(tradeAgreement.offerer) +
+		JSON.stringify(tradeAgreement.demander) +
+		JSON.stringify(tradeAgreement.offer_file) +
+		JSON.stringify(tradeAgreement.offer_id) +
+		JSON.stringify(tradeAgreement.demand_file) +
+		JSON.stringify(tradeAgreement.demand_id) +
+		JSON.stringify(tradeAgreement.unit_price) +
+		JSON.stringify(tradeAgreement.volume) +
+		JSON.stringify(tradeAgreement.end_date);
+}
+
+/**
+ *
  * @param {Bid} bid
  * @param {string} privateKey
  * @return {string}
@@ -131,6 +186,18 @@ function createBidSignature(bid, privateKey) {
 	let sign = crypto.createSign('SHA256');
 	sign.write(bidToSignatureString(bid));
 	return sign.sign(privateKey, 'base64');
+}
+
+/**
+ *
+ * @param {TradeAgreement} tradeAgreement
+ * @param {string} privateKey
+ * @return {string}
+ */
+function createTradeAgreementSignature(tradeAgreement, privateKey) {
+    let sign = crypto.createSign('SHA256');
+    sign.write(tradeAgreementToSignatureString(tradeAgreement));
+    return sign.sign(privateKey, 'base64');
 }
 
 
@@ -147,6 +214,18 @@ function verifyBidSignature(bidFromIPFS, publicKey) {
 }
 
 /**
+ *
+ * @param {IpfsTradeAgreement} tradeAgreementFromIPFS
+ * @param publicKey
+ * @return {boolean}
+ */
+function verifyTradeAgreementSignature(tradeAgreementFromIPFS, publicKey) {
+    let verify = crypto.createVerify('SHA256');
+    verify.update(tradeAgreementToSignatureString(tradeAgreementFromIPFS));
+    return verify.verify(publicKey, tradeAgreementFromIPFS.leader_signature, "base64");
+}
+
+/**
  * @async
  * @param {Ipfs} ipfs
  * @param {Bid} bid
@@ -157,6 +236,19 @@ function verifyBidSignature(bidFromIPFS, publicKey) {
 async function storeBid(ipfs, bid, privateKey, path="") {
 	bid['signature'] = createBidSignature(bid, privateKey);
 	return (await storeObject(ipfs, bid, path))[0];
+}
+
+/**
+ *
+ * @param {Ipfs} ipfs
+ * @param {TradeAgreement} trade_agreement
+ * @param {string} privateKey
+ * @param {string} path
+ * @return {Promise<Object>}
+ */
+async function storeTradeAgreement(ipfs, trade_agreement, privateKey, path="") {
+	trade_agreement['leader_signature'] = createTradeAgreementSignature(trade_agreement, privateKey);
+	return (await storeObject(ipfs, trade_agreement, path))[0];
 }
 
 /**
@@ -177,6 +269,16 @@ async function retrieveBid(ipfs, ipfsPath, publicKey="") {
 
 /**
  *
+ * @param ipfs
+ * @param ipfsPath
+ * @return {Promise<Object>}
+ */
+async function retrieveTradeAgreement(ipfs, ipfsPath) {
+	return (await retrieveObject(ipfs, ipfsPath))[0];
+}
+
+/**
+ *
  * @return {Promise<Ipfs>}
  */
 async function getNode() {
@@ -192,8 +294,12 @@ module.exports = {
 	getNode: getNode,
 	addPublicKey: addPublicKey,
 	getPublicKey: getPublicKey,
+	setPrivateKey: setPrivateKey,
+	getPrivateKey: getPrivateKey,
 	storeObject: storeObject,
 	retrieveObject: retrieveObject,
 	storeBid: storeBid,
-	retrieveBid: retrieveBid
+	storeTradeAgreement,
+	retrieveBid: retrieveBid,
+	retrieveTradeAgreement
 };
