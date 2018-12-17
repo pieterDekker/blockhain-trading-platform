@@ -13,14 +13,14 @@ with open('./node_error', 'r') as fp:
 		# print("read line {}".format(line_num))
 		if (line[:4] == "INFO"):
 			if not start_time:
-				start_time = dtparser.parse(line[12:24])
+				start_time = dtparser.parse(line[6:24].replace('|', ' '))
 			# print("infoline at {}".format(line_num))
 			if line.find("mined potential block") >= 0:
 				mined += 1
-				latest_time = dtparser.parse(line[12:24])
+				latest_time = dtparser.parse(line[6:24].replace('|', ' '))
 			if line.find("block reached canonical chain") >= 0:
 				reached_canon += 1
-				latest_time = dtparser.parse(line[12:24])
+				latest_time = dtparser.parse(line[6:24].replace('|', ' '))
 		line = fp.readline() 
 		line_num += 1
 	print("{} blocks mined of which {} reached the canonical chain in {}".format(mined, reached_canon, latest_time - start_time))
