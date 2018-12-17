@@ -116,7 +116,7 @@ function setError(callback) {
 /**
  * @param {Eth.Contract} contract
  */
-function testGetName(contract) {
+async function testGetName(contract) {
     let fn = "getName";
     expect_f(fileName, fn, 1);
     contract.methods.getName().call()
@@ -128,7 +128,7 @@ function testGetName(contract) {
         });
 }
 
-function testNewBid(contract) {
+async function testNewBid(contract) {
 	let fn = "newBid";
 	expect_f(fileName, fn, 6);
 
@@ -143,11 +143,15 @@ function testNewBid(contract) {
 				expires : 3,
 				owner: account
 			};
-			// let key_pair = await util.generateKeyPair();
-			let keyPair = kp();
-			ipfs.addPublicKey(account, keyPair.public);
-			// console.log('bid:');
-			// console.log(bid);
+			let keyPair = {};
+            try {
+				keyPair.public = ipfs.getPublicKey();
+				keyPair.private = ipfs.getPrivateKey();
+			} catch (e) {
+				keyPair = kp();
+				ipfs.addPublicKey(account, keyPair.public);
+				ipfs.setPrivateKey(keyPair.private)
+			}
 
 			let ipfs_file = await ipfs.storeBid(ipfs_node, bid, keyPair.private);
 			let ipfs_file_id_bytes = util.stringToBytes(ipfs_file.path);
@@ -184,6 +188,17 @@ function testNewBid(contract) {
 
 }
 
+async function testUseBid(contract) {
+	let fn = "useBid";
+	expect_f(fileName, fn, 3);
+	await contract.methods.useBid(0).send({from: account, gas: gasAmount});
+	let usedBids = await contract.methods.getUsedBids().call();
+	let bidUsed0 = await contract.methods.isBidUsed(0).call();
+	assertTrue(usedBids.length === 1, fn, "There should be exactly 1 used bid, have " + usedBids.length);
+	assertTrue(usedBids[0] === "0", fn, "expected 0 to be the first used bid, found " + usedBids[0]);
+	assertTrue(bidUsed0 === true, fn, "Expected isBidUsed[0] to be true, found " + bidUsed0);
+}
+
 module.exports = {
     constructor_arguments: constructor_arguments,
     fileName: fileName,
@@ -195,5 +210,6 @@ module.exports = {
     setAccount: setAccount,
     setGasAmount: setGasAmount,
 	testGetName: testGetName,
-    testNewBid: testNewBid
+    testNewBid: testNewBid,
+	testUseBid: testUseBid
 };
