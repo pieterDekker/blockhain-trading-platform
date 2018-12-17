@@ -186,30 +186,32 @@ function error(fileName, functionName, error) {
  * @param contractInstance
  */
 function runTests(testModule, contractInstance) {
-    testModule.setFail(fail);
-    testModule.setPass(pass);
-    testModule.setExpect(expectTest);
-    testModule.setError(error);
-    testModule.setAccount(testAccount);
-    testModule.setGasAmount(gasAmount);
-    //run each testFunction
-    let testFunctions = getTestFunctions(testModule);
-    result[testModule.fileName] = {
-        expected_tests: testFunctions.length,
-        finished_tests: 0
-    };
-    fileNames[testModule.fileName] = [];
-    for (let testFuncName of testFunctions) {
-        let contractFuncName = util.upperToLowerCamelCase(getContractFuncName(testFuncName));
+    return new Promise(async (resolve, reject) => {
+        testModule.setFail(fail);
+        testModule.setPass(pass);
+        testModule.setExpect(expectTest);
+        testModule.setError(error);
+        testModule.setAccount(testAccount);
+        testModule.setGasAmount(gasAmount);
+        //run each testFunction
+        let testFunctions = getTestFunctions(testModule);
+        result[testModule.fileName] = {
+            expected_tests: testFunctions.length,
+            finished_tests: 0
+        };
+        fileNames[testModule.fileName] = [];
+        for (let testFuncName of testFunctions) {
+            let contractFuncName = util.upperToLowerCamelCase(getContractFuncName(testFuncName));
 
-        fileNames[testModule.fileName].push(contractFuncName);
-        try {
-            testModule[testFuncName](contractInstance);
-        } catch (error) {
-            console.log("Unexpected error while testing " + contractFuncName + ": " + error.message);
-            console.log(error);
+            fileNames[testModule.fileName].push(contractFuncName);
+            try {
+                await testModule[testFuncName](contractInstance);
+            } catch (error) {
+                console.log("Unexpected error while testing " + contractFuncName + ": " + error.message);
+                console.log(error);
+            }
         }
-    }
+    });
 }
 
 /**
@@ -245,72 +247,77 @@ function drawReport(fileName) {
 
 }
 
-console.log("SolTest 0.1");
-console.log("A minimalist, project specific testing framework for Ethereum smart contracts written in solidity");
-console.log("Author: Pieter Dekker");
-
 function prepareTest(fileName) {
     //Load the test module
     let testModule = require(testDir + '/' + fileName);
 
     //Compile the contract under test in testModule
-    var compiled;
+    let compiled;
     try {
-        let contractFile = fs.readFileSync(contractDir + '/' + testModule.fileName).toString();
-        if (testModule.includes.length === 0) {
-            compiled = util.compileContractFromFile(contractFile);
-        } else {
-            let file = {};
-            file[testModule.fileName] = contractFile;
-            let includes = {};
-            testModule.includes.forEach(includeFileName => {
-                includes[includeFileName] = fs.readFileSync(contractDir + '/' + includeFileName).toString();
-            });
-            compiled = util.compileContractFromFileWithIncludes(file, includes);
+        if (!(testModule.compileAndDeployContract instanceof Function)) {
+            let contractFile = fs.readFileSync(contractDir + '/' + testModule.fileName).toString();
+            if (testModule.includes.length === 0) {
+                compiled = util.compileContractFromFile(contractFile);
+            } else {
+                let file = {};
+                file[testModule.fileName] = contractFile;
+                let includes = {};
+                testModule.includes.forEach(includeFileName => {
+                    includes[includeFileName] = fs.readFileSync(contractDir + '/' + includeFileName).toString();
+                });
+                compiled = util.compileContractFromFileWithIncludes(file, includes);
+            }
+            return {
+                module: testModule,
+                contract: new node.eth.Contract(compiled.abi),
+                bytecode: compiled.bytecode
+            }
+        }
+        return {
+            module: testModule
         }
     } catch (e) {
         console.log("Compilation failed: " + e.message);
-        return;
-    }
-
-    return {
-        module: testModule,
-        contract: new node.eth.Contract(compiled.abi),
-        bytecode: compiled.bytecode
+        return {};
     }
 }
 
 function unlockAndRun(test, fileName) {
-    // console.log(test);
     util.unlockAccount(node, testAccount, testPassword)
-        .then(() => {
-            // console.log(test.bytecode)
-            test.contract
-                .deploy({
-                    data: test.bytecode,
-                    arguments: test.module.constructor_arguments
-                })
-                .send({
-                    from: testAccount,
-                    gas: gasAmount
-                })
-                .then(contractInstance => {
-                    try{
-                        runTests(test.module, contractInstance);
-                    } catch (error) {
-                        console.log("Unexpected error in runTests for " + test.module.fileName + ": " + error.message);
-                        console.log(error);
-                    }
-                })
-                .catch(error => {
-                    console.log("Could not deploy contract from " + fileName + ": " + error.message);
-                    console.log(error);
-                });
+        .then(async () => {
+            let contractInstance;
+
+            if (test.module.compileAndDeployContract instanceof Function) {
+                contractInstance = await test.module.compileAndDeployContract(testAccount, gasAmount);
+            } else {
+                contractInstance = await test.contract
+                    .deploy({
+                        data: test.bytecode,
+                        arguments: test.module.constructor_arguments
+                    })
+                    .send({
+                        from: testAccount,
+                        gas: gasAmount
+                    });
+            }
+
+            try {
+                console.log('running tests in ' + test.module.fileName);
+                await runTests(test.module, contractInstance);
+                console.log('done testing ' + test.module.fileName);
+            } catch (error) {
+                console.log("Unexpected error in runTests for " + test.module.fileName + ": " + error.message);
+                console.log(error);
+            }
         })
         .catch(error => {
             console.log("Could not unlock account: " + error.message);
         });
 }
+
+console.log("SolTest 0.1");
+console.log("A minimalist, project specific testing framework for Ethereum smart contracts written in solidity");
+console.log("Author: Pieter Dekker");
 
 if (process.argv.length > 2) {
     for (i = 2; i < process.argv.length; i++) {
