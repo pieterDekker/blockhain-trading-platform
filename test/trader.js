@@ -54,11 +54,11 @@ let error_f = undefined;
  * @param {String} message
  */
 function assertTrue(cond, function_name, message) {
-    if (cond) {
-        pass_f(fileName, function_name, message);
-    } else {
-        fail_f(fileName, function_name, message);
-    }
+	if (cond) {
+		pass_f(fileName, function_name, message);
+	} else {
+		fail_f(fileName, function_name, message);
+	}
 }
 
 /**
@@ -67,7 +67,7 @@ function assertTrue(cond, function_name, message) {
  * @param {String} _account
  */
 function setAccount (_account) {
-    account = _account;
+	account = _account;
 }
 
 /**
@@ -76,7 +76,7 @@ function setAccount (_account) {
  * @param {Number} _gasAmount
  */
 function setGasAmount(_gasAmount) {
-    gasAmount = _gasAmount;
+	gasAmount = _gasAmount;
 }
 
 /**
@@ -84,7 +84,7 @@ function setGasAmount(_gasAmount) {
  * @param {expectCallback} callback
  */
 function setExpect(callback) {
-    expect_f = callback;
+	expect_f = callback;
 }
 
 /**
@@ -92,7 +92,7 @@ function setExpect(callback) {
  * @param {failCallback} callback
  */
 function setFail(callback) {
-    fail_f = callback;
+	fail_f = callback;
 }
 
 /**
@@ -100,7 +100,7 @@ function setFail(callback) {
  * @param {passCallback} callback
  */
 function setPass(callback) {
-    pass_f = callback;
+	pass_f = callback;
 }
 
 /**
@@ -108,33 +108,33 @@ function setPass(callback) {
  * @param {errorCallback} callback
  */
 function setError(callback) {
-    error_f = callback;
+	error_f = callback;
 }
 
 /**
  * @param {Eth.Contract} contract
  */
 function testGetName(contract) {
-    let fn = "getName";
-    expect_f(fileName, fn, 1);
-    contract.methods.getName().call()
-        .then(name => {
-            assertTrue(name === constructor_arguments[0], fn, "Name should be " + constructor_arguments[0] + ", is " + name);
-        })
-        .catch(error => {
-            error_f(fileName, fn, error);
-        })
+	let fn = "getName";
+	expect_f(fileName, fn, 1);
+	contract.methods.getName().call()
+		.then(name => {
+			assertTrue(name === constructor_arguments[0], fn, "Name should be " + constructor_arguments[0] + ", is " + name);
+		})
+		.catch(error => {
+			error_f(fileName, fn, error);
+		})
 }
 
 module.exports = {
-    constructor_arguments: constructor_arguments,
-    fileName: fileName,
-    includes: includes,
-    setFail: setFail,
-    setPass: setPass,
-    setExpect: setExpect,
-    setError: setError,
-    setAccount: setAccount,
-    setGasAmount: setGasAmount,
-    testGetName: testGetName
+	constructor_arguments: constructor_arguments,
+	fileName: fileName,
+	includes: includes,
+	setFail: setFail,
+	setPass: setPass,
+	setExpect: setExpect,
+	setError: setError,
+	setAccount: setAccount,
+	setGasAmount: setGasAmount,
+	testGetName: testGetName
 };

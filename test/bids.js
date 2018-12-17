@@ -56,11 +56,11 @@ let error_f = undefined;
  * @param {String} message
  */
 function assertTrue(cond, function_name, message) {
-    if (cond) {
-        pass_f(fileName, function_name, message);
-    } else {
-        fail_f(fileName, function_name, message);
-    }
+	if (cond) {
+		pass_f(fileName, function_name, message);
+	} else {
+		fail_f(fileName, function_name, message);
+	}
 }
 
 /**
@@ -69,7 +69,7 @@ function assertTrue(cond, function_name, message) {
  * @param {String} _account
  */
 function setAccount (_account) {
-    account = _account;
+	account = _account;
 }
 
 /**
@@ -78,7 +78,7 @@ function setAccount (_account) {
  * @param {Number} _gasAmount
  */
 function setGasAmount(_gasAmount) {
-    gasAmount = _gasAmount;
+	gasAmount = _gasAmount;
 }
 
 /**
@@ -86,7 +86,7 @@ function setGasAmount(_gasAmount) {
  * @param {expectCallback} callback
  */
 function setExpect(callback) {
-    expect_f = callback;
+	expect_f = callback;
 }
 
 /**
@@ -94,7 +94,7 @@ function setExpect(callback) {
  * @param {failCallback} callback
  */
 function setFail(callback) {
-    fail_f = callback;
+	fail_f = callback;
 }
 
 /**
@@ -102,7 +102,7 @@ function setFail(callback) {
  * @param {passCallback} callback
  */
 function setPass(callback) {
-    pass_f = callback;
+	pass_f = callback;
 }
 
 /**
@@ -110,22 +110,22 @@ function setPass(callback) {
  * @param {errorCallback} callback
  */
 function setError(callback) {
-    error_f = callback;
+	error_f = callback;
 }
 
 /**
  * @param {Eth.Contract} contract
  */
 async function testGetName(contract) {
-    let fn = "getName";
-    expect_f(fileName, fn, 1);
-    contract.methods.getName().call()
-        .then(name => {
-            assertTrue(name === "Bids", fn, "Name should be \"Bids\"");
-        })
-        .catch(error => {
-            error_f(fileName, fn, error)
-        });
+	let fn = "getName";
+	expect_f(fileName, fn, 1);
+	contract.methods.getName().call()
+		.then(name => {
+			assertTrue(name === "Bids", fn, "Name should be \"Bids\"");
+		})
+		.catch(error => {
+			error_f(fileName, fn, error)
+		});
 }
 
 async function testNewBid(contract) {
@@ -144,7 +144,7 @@ async function testNewBid(contract) {
 				owner: account
 			};
 			let keyPair = {};
-            try {
+	        try {
 				keyPair.public = ipfs.getPublicKey();
 				keyPair.private = ipfs.getPrivateKey();
 			} catch (e) {
@@ -188,28 +188,16 @@ async function testNewBid(contract) {
 
 }
 
-async function testUseBid(contract) {
-	let fn = "useBid";
-	expect_f(fileName, fn, 3);
-	await contract.methods.useBid(0).send({from: account, gas: gasAmount});
-	let usedBids = await contract.methods.getUsedBids().call();
-	let bidUsed0 = await contract.methods.isBidUsed(0).call();
-	assertTrue(usedBids.length === 1, fn, "There should be exactly 1 used bid, have " + usedBids.length);
-	assertTrue(usedBids[0] === "0", fn, "expected 0 to be the first used bid, found " + usedBids[0]);
-	assertTrue(bidUsed0 === true, fn, "Expected isBidUsed[0] to be true, found " + bidUsed0);
-}
-
 module.exports = {
-    constructor_arguments: constructor_arguments,
-    fileName: fileName,
-    includes: includes,
-    setFail: setFail,
-    setPass: setPass,
-    setExpect: setExpect,
-    setError: setError,
-    setAccount: setAccount,
-    setGasAmount: setGasAmount,
+	constructor_arguments: constructor_arguments,
+	fileName: fileName,
+	includes: includes,
+	setFail: setFail,
+	setPass: setPass,
+	setExpect: setExpect,
+	setError: setError,
+	setAccount: setAccount,
+	setGasAmount: setGasAmount,
 	testGetName: testGetName,
-    testNewBid: testNewBid,
-	testUseBid: testUseBid
+	testNewBid: testNewBid,
 };

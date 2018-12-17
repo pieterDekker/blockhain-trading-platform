@@ -5,7 +5,7 @@ const solc = require('solc');
  * @param {String} string
  */
 function upperToLowerCamelCase(string) {
-    return string[0].toLowerCase() + string.substr(1);
+	return string[0].toLowerCase() + string.substr(1);
 }
 
 /**
@@ -13,7 +13,7 @@ function upperToLowerCamelCase(string) {
  * @param {String} string
  */
 function lowerToUpperCamelCase(string) {
-    return string[0].toUpperCase() + string.substr(1);
+	return string[0].toUpperCase() + string.substr(1);
 }
 
 /**
@@ -22,23 +22,23 @@ function lowerToUpperCamelCase(string) {
  * @return {boolean}
  */
 function isWarning(string) {
-    //Find the first capital 'W'
-    let idx = 0;
-    while (string[idx] !== "W") {
-        idx++;
-        if (idx >= string.length) {
-            break;
-        }
-    }
-    //See if the first capital 'W' is followed by exactly 'arning:'
-    return (string.substr(idx, "Warning:".length) === "Warning:");
+	//Find the first capital 'W'
+	let idx = 0;
+	while (string[idx] !== "W") {
+		idx++;
+		if (idx >= string.length) {
+			break;
+		}
+	}
+	//See if the first capital 'W' is followed by exactly 'arning:'
+	return (string.substr(idx, "Warning:".length) === "Warning:");
 }
 
 function extend(object, extension) {
-    Object.keys(extension).forEach(key => {
-        object[key] = extension[key];
-    });
-    return object;
+	Object.keys(extension).forEach(key => {
+		object[key] = extension[key];
+	});
+	return object;
 }
 
 /**
@@ -51,7 +51,7 @@ function extend(object, extension) {
  * @returns {Promise} resolves with true on success, an error string on failure.
  */
 function unlockAccount(node, account, passphrase, duration = 300) {
-    return node.eth.personal.unlockAccount(account, passphrase, duration);
+	return node.eth.personal.unlockAccount(account, passphrase, duration);
 }
 
 /**
@@ -60,10 +60,10 @@ function unlockAccount(node, account, passphrase, duration = 300) {
  * @return {string}
  */
 function stripJsExt(fileName) {
-    if (fileName.indexOf('.js') === fileName.length - 3) {
-        return fileName.substr(0,fileName.length - 3)
-    }
-    return fileName
+	if (fileName.indexOf('.js') === fileName.length - 3) {
+		return fileName.substr(0,fileName.length - 3)
+	}
+	return fileName
 }
 
 /**
@@ -72,10 +72,10 @@ function stripJsExt(fileName) {
  * @return {string}
  */
 function stripSolExt(fileName) {
-    if (fileName.indexOf('.sol') === fileName.length - 4) {
-        return fileName.substr(0,fileName.length - 4)
-    }
-    return fileName
+	if (fileName.indexOf('.sol') === fileName.length - 4) {
+		return fileName.substr(0,fileName.length - 4)
+	}
+	return fileName
 }
 
 /**
@@ -84,7 +84,7 @@ function stripSolExt(fileName) {
  * @return {boolean}
  */
 function isSingleContract(compiled) {
-    return Object.keys(compiled.contracts).length === 1;
+	return Object.keys(compiled.contracts).length === 1;
 }
 
 /**
@@ -93,13 +93,13 @@ function isSingleContract(compiled) {
  * @return {string[]}
  */
 function getContractNames(compiled) {
-    let names = Object.keys(compiled.contracts);
-    for (let idx in names){
-        if (names[idx].indexOf(':') === 0){
-            names[idx] = names[idx].substr(1);
-        }
-    }
-    return names;
+	let names = Object.keys(compiled.contracts);
+	for (let idx in names){
+		if (names[idx].indexOf(':') === 0){
+			names[idx] = names[idx].substr(1);
+		}
+	}
+	return names;
 }
 
 /**
@@ -108,11 +108,11 @@ function getContractNames(compiled) {
  * @return {string}
  */
 function getContractName(compiled) {
-    let names = getContractNames(compiled);
-    if (names.length > 1) {
-        throw Error("Expected a single contract, got " + names.length);
-    }
-    return names[0]
+	let names = getContractNames(compiled);
+	if (names.length > 1) {
+		throw Error("Expected a single contract, got " + names.length);
+	}
+	return names[0]
 }
 
 
@@ -122,29 +122,29 @@ function getContractName(compiled) {
  * @return {{abi: Object, bytecode: string}}
  */
 function compileContractFromFile(file) {
-    // console.log(file)
-    let compiled = solc.compile(file, 1);
-    if (Array.isArray(compiled.errors) && compiled.errors.length > 0) {
-        let errors = false;
-        compiled.errors.forEach(error => {
-            console.log(error);
-            errors = !isWarning(error);
-        });
-        if (errors) {
-            throw Error("Compilation failed, see errors above")
-        }
-    }
-    if (!isSingleContract(compiled)) {
-        throw Error("only single contract files supported")
-    }
-    let name = getContractName(compiled);
-    let contract = compiled.contracts[':' + name];
-    let abi = JSON.parse(contract.interface);
+	// console.log(file)
+	let compiled = solc.compile(file, 1);
+	if (Array.isArray(compiled.errors) && compiled.errors.length > 0) {
+		let errors = false;
+		compiled.errors.forEach(error => {
+			console.log(error);
+			errors = !isWarning(error);
+		});
+		if (errors) {
+			throw Error("Compilation failed, see errors above")
+		}
+	}
+	if (!isSingleContract(compiled)) {
+		throw Error("only single contract files supported")
+	}
+	let name = getContractName(compiled);
+	let contract = compiled.contracts[':' + name];
+	let abi = JSON.parse(contract.interface);
 
-    return {
-        abi: abi,
-        bytecode: "0x" + contract.bytecode
-    }
+	return {
+		abi: abi,
+		bytecode: "0x" + contract.bytecode
+	}
 }
 
 /**
@@ -154,33 +154,33 @@ function compileContractFromFile(file) {
  * @return {{abi: Object, bytecode: string}}
  */
 function compileContractFromFileWithIncludes(file, includes = []) {
-    if (includes.length < 1) {
-        throw Error("Expected at least one include, found " + includes.length);
-    }
+	if (includes.length < 1) {
+		throw Error("Expected at least one include, found " + includes.length);
+	}
 
-    let sources = extend(file, includes);
+	let sources = extend(file, includes);
 
-    let compiled = solc.compile({sources: sources}, 1);
-    if (Array.isArray(compiled.errors) && compiled.errors.length > 0) {
-        let errors = false;
-        compiled.errors.forEach(error => {
-            console.log(error);
-            errors = !isWarning(error);
-        });
-        if (errors) {
-            throw Error("Compilation failed, see errors above")
-        }
-    }
+	let compiled = solc.compile({sources: sources}, 1);
+	if (Array.isArray(compiled.errors) && compiled.errors.length > 0) {
+		let errors = false;
+		compiled.errors.forEach(error => {
+			console.log(error);
+			errors = !isWarning(error);
+		});
+		if (errors) {
+			throw Error("Compilation failed, see errors above")
+		}
+	}
 
-    let name = lowerToUpperCamelCase(stripSolExt(Object.keys(file)[0]));
+	let name = lowerToUpperCamelCase(stripSolExt(Object.keys(file)[0]));
 
-    let contract = compiled.contracts[Object.keys(file)[0] + ':' + name];
-    let abi = JSON.parse(contract.interface);
+	let contract = compiled.contracts[Object.keys(file)[0] + ':' + name];
+	let abi = JSON.parse(contract.interface);
 
-    return {
-        abi: abi,
-        bytecode: "0x" + contract.bytecode
-    }
+	return {
+		abi: abi,
+		bytecode: "0x" + contract.bytecode
+	}
 }
 
 /**
@@ -188,32 +188,32 @@ function compileContractFromFileWithIncludes(file, includes = []) {
  * @param {String} byte_string
  */
 function byteStringToString(byte_string) {
-    if (byte_string.indexOf("0x") !== 0) {
-        throw Error("Bytestring expected to start with '0x' (" + byte_string + ")");
-    }
+	if (byte_string.indexOf("0x") !== 0) {
+		throw Error("Bytestring expected to start with '0x' (" + byte_string + ")");
+	}
 
-    let string = "";
-    for (let i = 2; i < byte_string.length; i += 2) {
-        string += String.fromCharCode(parseInt(byte_string.substr(i,2), 16));
-    }
-    return string;
+	let string = "";
+	for (let i = 2; i < byte_string.length; i += 2) {
+		string += String.fromCharCode(parseInt(byte_string.substr(i,2), 16));
+	}
+	return string;
 }
 
 function stringToBytes (string) {
-    let buffer = Buffer.from(string, 'ascii');
-    let bytes = [];
-    for (let i = 0; i < buffer.length; ++i) {
-        bytes.push(buffer[i]);
-    }
-    return bytes;
+	let buffer = Buffer.from(string, 'ascii');
+	let bytes = [];
+	for (let i = 0; i < buffer.length; ++i) {
+		bytes.push(buffer[i]);
+	}
+	return bytes;
 }
 
 module.exports = {
-    unlockAccount: unlockAccount,
-    stripJsExt: stripJsExt,
-    upperToLowerCamelCase: upperToLowerCamelCase,
-    compileContractFromFile: compileContractFromFile,
-    compileContractFromFileWithIncludes: compileContractFromFileWithIncludes,
-    byteStringToString: byteStringToString,
-    stringToBytes: stringToBytes
+	unlockAccount: unlockAccount,
+	stripJsExt: stripJsExt,
+	upperToLowerCamelCase: upperToLowerCamelCase,
+	compileContractFromFile: compileContractFromFile,
+	compileContractFromFileWithIncludes: compileContractFromFileWithIncludes,
+	byteStringToString: byteStringToString,
+	stringToBytes: stringToBytes
 };

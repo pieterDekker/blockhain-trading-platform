@@ -27,7 +27,7 @@ let fileNames = {};
  * @param {String} message
  */
 function logFail(message) {
-    console.log("\t" + log_sym.error, chalk.red(message));
+	console.log("\t" + log_sym.error, chalk.red(message));
 }
 
 /**
@@ -36,7 +36,7 @@ function logFail(message) {
  * @param {String} message
  */
 function logWarning(message) {
-    console.log(log_sym.warning, chalk.yellow(message));
+	console.log(log_sym.warning, chalk.yellow(message));
 }
 
 /**
@@ -45,7 +45,7 @@ function logWarning(message) {
  * @param {String} message
  */
 function logPass(message) {
-    console.log("\t" + log_sym.success, chalk.green(message));
+	console.log("\t" + log_sym.success, chalk.green(message));
 }
 
 /**
@@ -55,7 +55,7 @@ function logPass(message) {
  * @return {boolean} True if testModule.propertyName is a function and starts with 'test'
  */
 function isTestFunction(propertyName, testModule) {
-    return propertyName.indexOf('test') === 0 && testModule[propertyName] instanceof Function;
+	return propertyName.indexOf('test') === 0 && testModule[propertyName] instanceof Function;
 }
 
 /**
@@ -65,13 +65,13 @@ function isTestFunction(propertyName, testModule) {
  * @return {Array}
  */
 function getTestFunctions(testModule) {
-    let testFunctions = [];
-    for (let propertyName in testModule) {
-        if (testModule.hasOwnProperty(propertyName) && isTestFunction(propertyName, testModule)) {
-            testFunctions.push(propertyName);
-        }
-    }
-    return testFunctions;
+	let testFunctions = [];
+	for (let propertyName in testModule) {
+		if (testModule.hasOwnProperty(propertyName) && isTestFunction(propertyName, testModule)) {
+			testFunctions.push(propertyName);
+		}
+	}
+	return testFunctions;
 }
 
 /**
@@ -81,10 +81,10 @@ function getTestFunctions(testModule) {
  * @return {string}
  */
 function getContractFuncName(testFuncName) {
-    if (testFuncName.indexOf('test') === 0) {
-        return testFuncName.substr(4);
-    }
-    throw Error("Test function names should start with 'test'")
+	if (testFuncName.indexOf('test') === 0) {
+		return testFuncName.substr(4);
+	}
+	throw Error("Test function names should start with 'test'")
 }
 
 /**
@@ -95,8 +95,8 @@ function getContractFuncName(testFuncName) {
  * @return {boolean}
  */
 function testFinished(fileName, functionName) {
-    return result[fileName][functionName].assertions.length === result[fileName][functionName].assertions_expected ||
-        result[fileName][functionName].errors.length > 0;
+	return result[fileName][functionName].assertions.length === result[fileName][functionName].assertions_expected ||
+		result[fileName][functionName].errors.length > 0;
 }
 
 /**
@@ -106,7 +106,7 @@ function testFinished(fileName, functionName) {
  * @return {boolean}
  */
 function testModuleFinished(fileName) {
-    return result[fileName].expected_tests === result[fileName].finished_tests;
+	return result[fileName].expected_tests === result[fileName].finished_tests;
 }
 
 /**
@@ -115,9 +115,9 @@ function testModuleFinished(fileName) {
  * @param fileName
  */
 function postTest(fileName) {
-    if (testModuleFinished(fileName)) {
-        drawReport(fileName)
-    }
+	if (testModuleFinished(fileName)) {
+		drawReport(fileName)
+	}
 }
 
 /**
@@ -128,11 +128,11 @@ function postTest(fileName) {
  * @param num_assertions
  */
 function expectTest(fileName, functionName, num_assertions) {
-    result[fileName][functionName] = {
-        assertions_expected: num_assertions,
-        assertions: [],
-        errors: []
-    };
+	result[fileName][functionName] = {
+		assertions_expected: num_assertions,
+		assertions: [],
+		errors: []
+	};
 }
 
 /**
@@ -143,12 +143,12 @@ function expectTest(fileName, functionName, num_assertions) {
  * @param message
  */
 function pass(fileName, functionName, message) {
-    result[fileName][functionName].assertions.push({status: PASSED, message: message});
-    if (testFinished(fileName, functionName)) {
-        result[fileName].finished_tests += 1;
-        // console.log("finished " + functionName);
-    }
-    postTest(fileName);
+	result[fileName][functionName].assertions.push({status: PASSED, message: message});
+	if (testFinished(fileName, functionName)) {
+		result[fileName].finished_tests += 1;
+		// console.log("finished " + functionName);
+	}
+	postTest(fileName);
 }
 
 /**
@@ -159,12 +159,12 @@ function pass(fileName, functionName, message) {
  * @param message
  */
 function fail(fileName, functionName, message) {
-    result[fileName][functionName].assertions.push({status:FAILED, message: message});
-    if (testFinished(fileName, functionName)) {
-        result[fileName].finished_tests += 1;
-        // console.log("finished " + functionName);
-    }
-    postTest(fileName);
+	result[fileName][functionName].assertions.push({status:FAILED, message: message});
+	if (testFinished(fileName, functionName)) {
+		result[fileName].finished_tests += 1;
+		// console.log("finished " + functionName);
+	}
+	postTest(fileName);
 }
 
 /**
@@ -175,8 +175,8 @@ function fail(fileName, functionName, message) {
  * @param error
  */
 function error(fileName, functionName, error) {
-    result[fileName][functionName].errors.push(error);
-    postTest(fileName);
+	result[fileName][functionName].errors.push(error);
+	postTest(fileName);
 }
 
 /**
@@ -186,32 +186,32 @@ function error(fileName, functionName, error) {
  * @param contractInstance
  */
 function runTests(testModule, contractInstance) {
-    return new Promise(async (resolve, reject) => {
-        testModule.setFail(fail);
-        testModule.setPass(pass);
-        testModule.setExpect(expectTest);
-        testModule.setError(error);
-        testModule.setAccount(testAccount);
-        testModule.setGasAmount(gasAmount);
-        //run each testFunction
-        let testFunctions = getTestFunctions(testModule);
-        result[testModule.fileName] = {
-            expected_tests: testFunctions.length,
-            finished_tests: 0
-        };
-        fileNames[testModule.fileName] = [];
-        for (let testFuncName of testFunctions) {
-            let contractFuncName = util.upperToLowerCamelCase(getContractFuncName(testFuncName));
+	return new Promise(async (resolve, reject) => {
+		testModule.setFail(fail);
+		testModule.setPass(pass);
+		testModule.setExpect(expectTest);
+		testModule.setError(error);
+		testModule.setAccount(testAccount);
+		testModule.setGasAmount(gasAmount);
+		//run each testFunction
+		let testFunctions = getTestFunctions(testModule);
+		result[testModule.fileName] = {
+			expected_tests: testFunctions.length,
+			finished_tests: 0
+		};
+		fileNames[testModule.fileName] = [];
+		for (let testFuncName of testFunctions) {
+			let contractFuncName = util.upperToLowerCamelCase(getContractFuncName(testFuncName));
 
-            fileNames[testModule.fileName].push(contractFuncName);
-            try {
-                await testModule[testFuncName](contractInstance);
-            } catch (error) {
-                console.log("Unexpected error while testing " + contractFuncName + ": " + error.message);
-                console.log(error);
-            }
-        }
-    });
+			fileNames[testModule.fileName].push(contractFuncName);
+			try {
+				await testModule[testFuncName](contractInstance);
+			} catch (error) {
+				console.log("Unexpected error while testing " + contractFuncName + ": " + error.message);
+				console.log(error);
+			}
+		}
+	});
 }
 
 /**
@@ -220,99 +220,99 @@ function runTests(testModule, contractInstance) {
  * @param {String} fileName
  */
 function drawReport(fileName) {
-    let file = fileNames[fileName];
-    console.log("");
-    console.log("Tested " + file.length + " functions for " + fileName + ". Results:");
-    let had_errors;
-    for (let functionName of file) {
-        console.log("Tested " + functionName + ":");
-        for (let assertion of result[fileName][functionName].assertions) {
-            if (assertion.status === PASSED) {
-                logPass(assertion.message)
-            } else {
-                logFail(assertion.message)
-            }
-        }
-        for (let error of result[fileName][functionName].errors) {
-            had_errors = true;
-            console.log("An error occurred in " + functionName + " of " + fileName);
-            console.log(error);
-            console.log("");
-        }
-        console.log("");
-    }
-    if (had_errors) {
-        logWarning("There were errors in tests for " + fileName + ". Reporting is not reliable.");
-    }
+	let file = fileNames[fileName];
+	console.log("");
+	console.log("Tested " + file.length + " functions for " + fileName + ". Results:");
+	let had_errors;
+	for (let functionName of file) {
+		console.log("Tested " + functionName + ":");
+		for (let assertion of result[fileName][functionName].assertions) {
+			if (assertion.status === PASSED) {
+				logPass(assertion.message)
+			} else {
+				logFail(assertion.message)
+			}
+		}
+		for (let error of result[fileName][functionName].errors) {
+			had_errors = true;
+			console.log("An error occurred in " + functionName + " of " + fileName);
+			console.log(error);
+			console.log("");
+		}
+		console.log("");
+	}
+	if (had_errors) {
+		logWarning("There were errors in tests for " + fileName + ". Reporting is not reliable.");
+	}
 
 }
 
 function prepareTest(fileName) {
-    //Load the test module
-    let testModule = require(testDir + '/' + fileName);
+	//Load the test module
+	let testModule = require(testDir + '/' + fileName);
 
-    //Compile the contract under test in testModule
-    let compiled;
-    try {
-        if (!(testModule.compileAndDeployContract instanceof Function)) {
-            let contractFile = fs.readFileSync(contractDir + '/' + testModule.fileName).toString();
-            if (testModule.includes.length === 0) {
-                compiled = util.compileContractFromFile(contractFile);
-            } else {
-                let file = {};
-                file[testModule.fileName] = contractFile;
-                let includes = {};
-                testModule.includes.forEach(includeFileName => {
-                    includes[includeFileName] = fs.readFileSync(contractDir + '/' + includeFileName).toString();
-                });
-                compiled = util.compileContractFromFileWithIncludes(file, includes);
-            }
-            return {
-                module: testModule,
-                contract: new node.eth.Contract(compiled.abi),
-                bytecode: compiled.bytecode
-            }
-        }
-        return {
-            module: testModule
-        }
-    } catch (e) {
-        console.log("Compilation failed: " + e.message);
-        return {};
-    }
+	//Compile the contract under test in testModule
+	let compiled;
+	try {
+		if (!(testModule.compileAndDeployContract instanceof Function)) {
+			let contractFile = fs.readFileSync(contractDir + '/' + testModule.fileName).toString();
+			if (testModule.includes.length === 0) {
+				compiled = util.compileContractFromFile(contractFile);
+			} else {
+				let file = {};
+				file[testModule.fileName] = contractFile;
+				let includes = {};
+				testModule.includes.forEach(includeFileName => {
+					includes[includeFileName] = fs.readFileSync(contractDir + '/' + includeFileName).toString();
+				});
+				compiled = util.compileContractFromFileWithIncludes(file, includes);
+			}
+			return {
+				module: testModule,
+				contract: new node.eth.Contract(compiled.abi),
+				bytecode: compiled.bytecode
+			}
+		}
+		return {
+			module: testModule
+		}
+	} catch (e) {
+		console.log("Compilation failed: " + e.message);
+		return {};
+	}
 }
 
 function unlockAndRun(test, fileName) {
-    util.unlockAccount(node, testAccount, testPassword)
-        .then(async () => {
-            let contractInstance;
+	util.unlockAccount(node, testAccount, testPassword)
+		.then(async () => {
+			let contractInstance;
 
-            if (test.module.compileAndDeployContract instanceof Function) {
-                contractInstance = await test.module.compileAndDeployContract(testAccount, gasAmount);
-            } else {
-                contractInstance = await test.contract
-                    .deploy({
-                        data: test.bytecode,
-                        arguments: test.module.constructor_arguments
-                    })
-                    .send({
-                        from: testAccount,
-                        gas: gasAmount
-                    });
-            }
+			if (test.module.compileAndDeployContract instanceof Function) {
+				contractInstance = await test.module.compileAndDeployContract(testAccount, gasAmount);
+			} else {
+				contractInstance = await test.contract
+					.deploy({
+						data: test.bytecode,
+						arguments: test.module.constructor_arguments
+					})
+					.send({
+						from: testAccount,
+						gas: gasAmount
+					});
+			}
 
-            try {
-                console.log('running tests in ' + test.module.fileName);
-                await runTests(test.module, contractInstance);
-                console.log('done testing ' + test.module.fileName);
-            } catch (error) {
-                console.log("Unexpected error in runTests for " + test.module.fileName + ": " + error.message);
-                console.log(error);
-            }
-        })
-        .catch(error => {
-            console.log("Could not unlock account: " + error.message);
-        });
+			try {
+				console.log('running tests in ' + test.module.fileName);
+				await runTests(test.module, contractInstance);
+				console.log('done testing ' + test.module.fileName);
+			} catch (error) {
+				console.log("Unexpected error in runTests for " + test.module.fileName + ": " + error.message);
+				console.log(error);
+			}
+		})
+		.catch(error => {
+			console.log("Could not unlock account: " + error.message);
+		});
 }
 
 console.log("SolTest 0.1");
@@ -320,22 +320,22 @@ console.log("A minimalist, project specific testing framework for Ethereum smart
 console.log("Author: Pieter Dekker");
 
 if (process.argv.length > 2) {
-    for (i = 2; i < process.argv.length; i++) {
-        let fileName = process.argv[i];
-        if (fs.existsSync(testDir + '/' + fileName)) {
-            console.log("Running tests in " + fileName);
-            let test = prepareTest(fileName);
-            unlockAndRun(test, fileName);
-        } else {
-            console.log("could not find " + fileName + " in " + testDir);
-        }
-    }
-    
+	for (i = 2; i < process.argv.length; i++) {
+		let fileName = process.argv[i];
+		if (fs.existsSync(testDir + '/' + fileName)) {
+			console.log("Running tests in " + fileName);
+			let test = prepareTest(fileName);
+			unlockAndRun(test, fileName);
+		} else {
+			console.log("could not find " + fileName + " in " + testDir);
+		}
+	}
+
 } else {
-    //For each file found in the testDirectory
-    console.log("running all tests in /test");
-    fs.readdirSync(testDir).forEach(file_name => {
-        let test = prepareTest(file_name);
-        unlockAndRun(test, file_name);
-    });
+	//For each file found in the testDirectory
+	console.log("running all tests in /test");
+	fs.readdirSync(testDir).forEach(file_name => {
+		let test = prepareTest(file_name);
+		unlockAndRun(test, file_name);
+	});
 }
