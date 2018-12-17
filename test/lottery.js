@@ -170,7 +170,6 @@ function testIssueTickets(contract) {
 		.then(() => {
 			contract.methods.getTickets().call()
 				.then(tickets => {
-					// console.log(tickets);
 					assertTrue(tickets.length >= 5, fn, "'tickets' should contain at least 5 tickets, contains " + tickets.length);
 				})
 				.catch(error => {
@@ -211,7 +210,6 @@ function testDraw(contract) {
 	expect_f(fileName, fn, 2);
 	contract.methods.draw().send({from: account, gas: gasAmount})
 		.then(receipt => {
-			console.log(receipt.events.NewLeader.returnValues);
 			assertTrue(true, fn, "New leader drawn from ticket " + receipt.events.NewLeader.returnValues.ticket);
 			assertTrue(receipt.events.NewLeader.returnValues.leader === account, fn, "New leader should be " + account + ", is " + receipt.events.NewLeader.returnValues.leader);
 		})
