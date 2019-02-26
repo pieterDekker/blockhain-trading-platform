@@ -1,9 +1,9 @@
-const Web3 = require('web3');
-const w3u = (new Web3()).utils;
+const util = require('../test_util');
+const marketplace = require('../marketplace'); //The marketplace component
 
-let fileName = 'traders.sol';
+let fileName = 'marketplace.sol';
 
-let includes = ['trader.sol'];
+let includes = [];
 
 let constructor_arguments = [];
 
@@ -128,66 +128,76 @@ function init(_account, _gasAmount, _expect_f, _pass_f, _fail_f, _error_f) {
 	setPass(_pass_f);
 	setFail(_fail_f);
 	setError(_error_f);
-}
-
-/**
- * @param contract
- */
-function testMetaTest(contract) {
-	let fn = "metaTest";
-	expect_f(fileName, fn, 2);
-	assertTrue(false, fn, "This should fail");
-	assertTrue(true, fn, "This should pass");
+	marketplace.init(account, gasAmount);
 }
 
 /**
  * @param {Eth.Contract} contract
  */
-function testGetName(contract) {
+async function testGetName(contract) {
 	let fn = "getName";
 	expect_f(fileName, fn, 1);
-	contract.methods.getName().call()
-		.then(name => {
-			assertTrue(name === "Trader collection", fn, "Name should be \"Trader collection\"");
-		})
-		.catch(error => {
-			error_f(fileName, fn, error)
-		});
+	let name = await contract.methods.getName().call();
+	assertTrue(name === "Bids", fn, "Name should be \"Bids\"");
 }
 
-function testNewTrader(contract) {
-	let fn = "newTrader";
+async function testNewBid(contract) {
+	let fn = "newBid";
 	expect_f(fileName, fn, 4);
-	contract.methods.newTrader("TestTrader").send({from: account, gas: gasAmount})
-		.then(() => {
-			assertTrue(true, fn, "newTrader receipt");
-			contract.methods.accountHasTrader(account).call()
-				.then(has_trader => {
-					assertTrue(has_trader, fn, "Account has trader returns " + has_trader)
-				})
-				.catch(error => {
-					error_f(fileName, fn, error);
-				});
 
-			contract.methods.getTraderForAccount(account).call()
-				.then(trader_address => {
-					assertTrue(w3u.isAddress(trader_address), fn, "getTraderForAccount returns a valid address");
-				})
-				.catch(error => {
-					error_f(fileName, fn, error);
-				});
+	/** @type {Bid} */
+	let bid = marketplace.newBidObject(0, 1, 2, 3, account);
 
-			contract.methods.newTrader("TestTrader").send({from: account, gas: gasAmount})
-				.then(() => {
-					fail_f(fileName, fn, "Second call to newTrader with same account should have failed");
-				})
-				.catch(() => {
-					pass_f(fileName, fn, "Second call to newTrader with same account failed")
-				})
-		})
-		.catch(error => {
-			error_f(fileName, fn, error);
-		});
+	try {
+		let index = await marketplace.publishBid(contract, bid);
+		let retrieved_bid = await marketplace.getBid(contract, index);
+		assertTrue(retrieved_bid.type === bid.type, fn, "retrieved bid type should be " + bid.type + ", is " + retrieved_bid.type);
+		assertTrue(retrieved_bid.unit_price === bid.unit_price, fn, "retrieved bid unit price should be " + bid.unit_price + ", is " + retrieved_bid.unit_price);
+		assertTrue(retrieved_bid.volume === bid.volume, fn, "retrieved bid volume should be " + bid.volume + ", is " + retrieved_bid.volume);
+		assertTrue(retrieved_bid.expires === bid.expires, fn, "retrieved bid expires should be " + bid.expires + ", is " + retrieved_bid.expires);
+	} catch (error) {
+		console.log(error);
+		error_f(fileName, fn, error);
+	}
+}
+
+async function testNewBids(contract) {
+	let fn = "newBids";
+	expect_f(fileName, fn, 1);
+
+	/** @type {Bid} */
+	let bids = [
+		marketplace.newBidObject(0, 1, 2, 3, account),
+		marketplace.newBidObject(0, 1, 2, 3, account),
+		marketplace.newBidObject(0, 1, 2, 3, account),
+	];
+
+	try {
+		let indices = await marketplace.publishBids(contract, bids);
+		assertTrue(indices.length === 3, fn, "Expected 3 indices, got " + indices.length);
+	} catch (error) {
+		console.log(error);
+		error_f(fileName, fn, error);
+	}
+}
+
+async function testGetBids(contract) {
+	let fn = "getBids";
+	expect_f(fileName, fn, 1);
+
+	/** @type {Bid[]} */
+	let bids =
+		[
+			marketplace.newBidObject(0, 1, 2, 3, account),
+			marketplace.newBidObject(1, 4, 5, 6, account),
+			marketplace.newBidObject(0, 7, 8, 9, account)
+		];
+
+	await marketplace.publishBids(contract, bids);
+
+	let retrievedBids = await marketplace.getBids(contract);
+	// console.log(retrievedBids);
+	pass_f(fileName, fn, "getBids returned succesfully");
 }
 
 module.exports = {
@@ -201,7 +211,8 @@ module.exports = {
 	setAccount: setAccount,
 	setGasAmount: setGasAmount,
 	init: init,
-	testMetaTest: testMetaTest,
 	testGetName: testGetName,
-	testNewTrader: testNewTrader
+	testNewBid: testNewBid,
+	testNewBids: testNewBids,
+	testGetBids: testGetBids,
 };

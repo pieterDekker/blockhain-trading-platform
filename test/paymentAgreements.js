@@ -13,9 +13,9 @@ const fs = require('fs');
 
 let node = nodeUtils.getNode();
 
-let fileName = 'tradeAgreements.sol';
+let fileName = 'paymentAgreements.sol';
 
-let includes = ['paymentAgreements.sol'];
+let includes = [];
 
 let constructor_arguments = [];
 
@@ -165,8 +165,8 @@ async function compileAndDeployContract(account, gasAmount) {
 	let tradeAgreementsCompiled = testUtil.compileContractFromFileWithIncludes({'tradeAgreements.sol': tradeAgreementsFile}, {'paymentAgreements.sol': paymentAgreementsFile});
 	let tradeAgreementsContract =
 		await (new node.eth.Contract(tradeAgreementsCompiled.abi))
-			// .deploy({data: tradeAgreementsCompiled.bytecode, arguments: ["0x0000000000000000000000000000000000000000"]})
-			// .deploy({data: tradeAgreementsCompiled.bytecode, arguments: ["0x47681d90A3B1B044980c39ed1e32D160a8043Ceb"]})
+		// .deploy({data: tradeAgreementsCompiled.bytecode, arguments: ["0x0000000000000000000000000000000000000000"]})
+		// .deploy({data: tradeAgreementsCompiled.bytecode, arguments: ["0x47681d90A3B1B044980c39ed1e32D160a8043Ceb"]})
 			.deploy({data: tradeAgreementsCompiled.bytecode, arguments: [paymentAgreementsContract._address]})
 			.send({from: account, gas: gasAmount});
 
@@ -199,22 +199,23 @@ async function testGet(contracts) {
 	let demandIndex = await marketplace.publishBid(contracts.marketplace, demand);
 	let demandPath = await marketplace.getBidPath(contracts.marketplace, demandIndex);
 
-	let receipt = await contracts.tradeAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 1, 2, 3).send({from: account, gas: gasAmount});
-	let eventData = eventUtils.dataFromReceipt(receipt, "NewTradeAgreement");
-	let retrieved = await tradeAgreements.get(contracts.tradeAgreements, eventData.id);
+	let createReceipt = await contracts.paymentAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 2, 3).send({from: account, gas: gasAmount});
+	let createEventData = eventUtils.dataFromReceipt(createReceipt, "NewPaymentAgreement");
+
+	let retrieved = await paymentAgreements.get(contracts.paymentAgreements, createEventData.id);
 
 	assertTrue(retrieved.offerOwner === account, fn, "Expected offer owner to be " + account + " found " + retrieved.offerOwner);
 	assertTrue(retrieved.demandOwner === account, fn, "Expected demand owner to be " + account + " found " + retrieved.demandOwner);
 	assertTrue(retrieved.offerPath === offerPath, fn, "Expected offer path to be " + offerPath + " found " + retrieved.offerPath);
 	assertTrue(retrieved.demandPath === demandPath, fn, "Expected demand path to be " + demandPath + " found " + retrieved.demandPath);
-	assertTrue(retrieved.volumeGoal === 1, fn, "Expected volume goal to be " + 1 + " found " + retrieved.volumeGoal);
-	assertTrue(retrieved.volumeActual === 0, fn, "Expected volume actual to be " + 0 + " found " + retrieved.volumeActual);
-	assertTrue(retrieved.volumeClaimed === 0, fn, "Expected volume claimed to be " + 0 + " found " + retrieved.volumeClaimed);
-	assertTrue(retrieved.agreementCreated === false, fn, "Expected agreementCreated to be false, found " + retrieved.agreementCreated);
+	assertTrue(retrieved.amountGoal === 2, fn, "Expected amount goal to be " + 2 + " found " + retrieved.amountGoal);
+	assertTrue(retrieved.amountActual === 0, fn, "Expected amount actual to be " + 0 + " found " + retrieved.amountActual);
+	assertTrue(retrieved.amountClaimed === 0, fn, "Expected amount claimed to be " + 0 + " found " + retrieved.amountClaimed);
+	assertTrue(retrieved.finished === false, fn, "Expected finished to be false, found " + retrieved.finished);
 }
 
-async function testClaimVolume(contracts) {
-	let fn = "claimVolume";
+async function testClaimAmount(contracts) {
+	let fn = "claimAmount";
 	expect_f(fileName, fn, 1);
 
 	let offer = marketplace.newBidObject(0,1,2,3, account);
@@ -225,19 +226,19 @@ async function testClaimVolume(contracts) {
 	let demandIndex = await marketplace.publishBid(contracts.marketplace, demand);
 	let demandPath = await marketplace.getBidPath(contracts.marketplace, demandIndex);
 
-	let createReceipt = await contracts.tradeAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 1, 2, 3).send({from: account, gas: gasAmount});
-	let eventData = eventUtils.dataFromReceipt(createReceipt, "NewTradeAgreement");
+	let createReceipt = await contracts.paymentAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 2, 3).send({from: account, gas: gasAmount});
+	let createEventData = eventUtils.dataFromReceipt(createReceipt, "NewPaymentAgreement");
 
-	let claimVolume = 1;
-	await tradeAgreements.claimVolume(contracts.tradeAgreements, eventData.id, claimVolume);
+	let claimAmount = 2;
+	await paymentAgreements.claimAmount(contracts.paymentAgreements, createEventData.id, claimAmount);
+	let retrieved = await paymentAgreements.get(contracts.paymentAgreements, createEventData.id);
 
-	let retrieved = await tradeAgreements.get(contracts.tradeAgreements, eventData.id);
-	assertTrue(retrieved.volumeClaimed === claimVolume, fn, "Expected volume claimed to be " + claimVolume + " found " + retrieved.volumeClaimed);
+	assertTrue(retrieved.amountClaimed === claimAmount, fn, "Expected amount claimed to be " + claimAmount + " found " + retrieved.amountClaimed);
 }
 
-async function testConfirmVolume(contracts) {
-	let fn = "confirmVolume";
-	expect_f(fileName, fn, 3);
+async function testConfirmAmount(contracts) {
+	let fn = "confirmAmount";
+	expect_f(fileName, fn, 2);
 
 	let offer = marketplace.newBidObject(0,1,2,3, account);
 	let offerIndex = await marketplace.publishBid(contracts.marketplace, offer);
@@ -247,20 +248,17 @@ async function testConfirmVolume(contracts) {
 	let demandIndex = await marketplace.publishBid(contracts.marketplace, demand);
 	let demandPath = await marketplace.getBidPath(contracts.marketplace, demandIndex);
 
-	let createReceipt = await contracts.tradeAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 1, 2, 3).send({from: account, gas: gasAmount});
-	let createEventData = eventUtils.dataFromReceipt(createReceipt, "NewTradeAgreement");
+	let createReceipt = await contracts.paymentAgreements.methods.create(account, byteUtils.stringToBytes(offerPath), account, byteUtils.stringToBytes(demandPath), 2, 3).send({from: account, gas: gasAmount});
+	let createEventData = eventUtils.dataFromReceipt(createReceipt, "NewPaymentAgreement");
 
-	await tradeAgreements.claimVolume(contracts.tradeAgreements, createEventData.id, 1);
+	let claimAmount = 2;
+	await paymentAgreements.claimAmount(contracts.paymentAgreements, createEventData.id, claimAmount);
+	await paymentAgreements.confirmAmount(contracts.paymentAgreements, createEventData.id);
+	let retrieved = await paymentAgreements.get(contracts.paymentAgreements, createEventData.id);
 
-	let confirmReceipt = await tradeAgreements.confirmVolume(contracts.tradeAgreements, createEventData.id, 1);
+	assertTrue(retrieved.amountActual === claimAmount, fn, "Expected amount actual to be " + claimAmount + " found " + retrieved.amountActual);
+	assertTrue(retrieved.finished === true, fn, "Expected finished to be true, found " + retrieved.finished);
 
-	let retrievedTradeAgreement = await tradeAgreements.get(contracts.tradeAgreements, createEventData.id);
-	assertTrue(retrievedTradeAgreement.agreementCreated === true, fn,"Expected agreement created to be true, found " + retrievedTradeAgreement.agreementCreated);
-
-	let newPaymentEvent = eventUtils.dataFromReceipt(confirmReceipt, "NewPaymentAgreement");
-	let retrievedPaymentAgreement = await paymentAgreements.get(contracts.paymentAgreements, newPaymentEvent.id);
-	assertTrue(retrievedPaymentAgreement.offerPath === offerPath, fn, "Expected the offer path in the created payment agreement to be " + offerPath + ", found " + retrievedPaymentAgreement.offerPath);
-	assertTrue(retrievedPaymentAgreement.demandPath === demandPath, fn, "Expected the demand path in the created payment agreement to be " + demandPath + ", found " + retrievedPaymentAgreement.demandPath);
 }
 
 module.exports = {
@@ -277,6 +275,6 @@ module.exports = {
 	compileAndDeployContract: compileAndDeployContract,
 	testGetName: testGetName,
 	testGet: testGet,
-	testClaimVolume: testClaimVolume,
-	testConfirmVolume: testConfirmVolume
+	testClaimAmount: testClaimAmount,
+	testConfirmAmount: testConfirmAmount
 };

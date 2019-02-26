@@ -112,6 +112,25 @@ function setError(callback) {
 }
 
 /**
+ * Initialize this test module.
+ *
+ * @param _account
+ * @param _gasAmount
+ * @param _expect_f
+ * @param _pass_f
+ * @param _fail_f
+ * @param _error_f
+ */
+function init(_account, _gasAmount, _expect_f, _pass_f, _fail_f, _error_f) {
+	setAccount(_account);
+	setGasAmount(_gasAmount);
+	setExpect(_expect_f);
+	setPass(_pass_f);
+	setFail(_fail_f);
+	setError(_error_f);
+}
+
+/**
  * @param {Eth.Contract} contract
  */
 function testGetName(contract) {
@@ -136,5 +155,6 @@ module.exports = {
 	setError: setError,
 	setAccount: setAccount,
 	setGasAmount: setGasAmount,
+	init: init,
 	testGetName: testGetName
 };

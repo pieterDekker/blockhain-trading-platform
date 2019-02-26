@@ -1,14 +1,17 @@
 const fs = require('fs');
 const Web3 = require('web3'); //For interaction with an eth node
 const util = require('./test_util');
+// const ipfs_util = require('./ipfs_util');
 const log_sym = require('log-symbols');
 const chalk = require('chalk');
-
+const nodeUtils = require('./node_utils');
 const FAILED = 0;
 const PASSED = 1;
 
 //Find a running node on localhost
-let node = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+// let node = new Web3(new Web3.providers.WebsocketProvider('ws://localhost:8546'));
+let node = nodeUtils.getNode();
+
 // const web3_utils = node.utils;
 let testDir = './test';
 let contractDir = './contracts';
@@ -17,7 +20,7 @@ let testPassword = "testaccount";
 let gasAmount = 100000000000;
 
 // let result = {finished_tests: 0, expected_tests: 0};
-let result = [];
+let results = [];
 
 let fileNames = {};
 
@@ -95,8 +98,8 @@ function getContractFuncName(testFuncName) {
  * @return {boolean}
  */
 function testFinished(fileName, functionName) {
-	return result[fileName][functionName].assertions.length === result[fileName][functionName].assertions_expected ||
-		result[fileName][functionName].errors.length > 0;
+	return results[fileName][functionName].assertions.length === results[fileName][functionName].assertions_expected ||
+		results[fileName][functionName].errors.length > 0;
 }
 
 /**
@@ -106,7 +109,19 @@ function testFinished(fileName, functionName) {
  * @return {boolean}
  */
 function testModuleFinished(fileName) {
-	return result[fileName].expected_tests === result[fileName].finished_tests;
+	return results[fileName].expected_tests === results[fileName].finished_tests;
+}
+
+/**
+ * Check that all testModules that are known have finished
+ * @return {boolean}
+ */
+function allTestModulesFinished() {
+	let allFinished = true;
+	Object.keys(results).forEach(result => {
+		allFinished = allFinished && (results[result].finished && results[result].finished === true);
+	});
+	return allFinished;
 }
 
 /**
@@ -116,7 +131,15 @@ function testModuleFinished(fileName) {
  */
 function postTest(fileName) {
 	if (testModuleFinished(fileName)) {
-		drawReport(fileName)
+		drawReport(fileName);
+		results[fileName]['finished'] = true;
+		if (allTestModulesFinished()) {
+			console.log(chalk.blue("All testModules finished!"));
+			console.log(chalk.blue("Stopping miner..."));
+			node.miner.stop();
+			console.log(chalk.blue("exiting with success..."));
+			process.exit(0);
+		}
 	}
 }
 
@@ -128,7 +151,7 @@ function postTest(fileName) {
  * @param num_assertions
  */
 function expectTest(fileName, functionName, num_assertions) {
-	result[fileName][functionName] = {
+	results[fileName][functionName] = {
 		assertions_expected: num_assertions,
 		assertions: [],
 		errors: []
@@ -143,9 +166,9 @@ function expectTest(fileName, functionName, num_assertions) {
  * @param message
  */
 function pass(fileName, functionName, message) {
-	result[fileName][functionName].assertions.push({status: PASSED, message: message});
+	results[fileName][functionName].assertions.push({status: PASSED, message: message});
 	if (testFinished(fileName, functionName)) {
-		result[fileName].finished_tests += 1;
+		results[fileName].finished_tests += 1;
 		// console.log("finished " + functionName);
 	}
 	postTest(fileName);
@@ -159,9 +182,9 @@ function pass(fileName, functionName, message) {
  * @param message
  */
 function fail(fileName, functionName, message) {
-	result[fileName][functionName].assertions.push({status:FAILED, message: message});
+	results[fileName][functionName].assertions.push({status:FAILED, message: message});
 	if (testFinished(fileName, functionName)) {
-		result[fileName].finished_tests += 1;
+		results[fileName].finished_tests += 1;
 		// console.log("finished " + functionName);
 	}
 	postTest(fileName);
@@ -175,7 +198,7 @@ function fail(fileName, functionName, message) {
  * @param error
  */
 function error(fileName, functionName, error) {
-	result[fileName][functionName].errors.push(error);
+	results[fileName][functionName].errors.push(error);
 	postTest(fileName);
 }
 
@@ -187,15 +210,10 @@ function error(fileName, functionName, error) {
  */
 function runTests(testModule, contractInstance) {
 	return new Promise(async (resolve, reject) => {
-		testModule.setFail(fail);
-		testModule.setPass(pass);
-		testModule.setExpect(expectTest);
-		testModule.setError(error);
-		testModule.setAccount(testAccount);
-		testModule.setGasAmount(gasAmount);
+		testModule.init(testAccount, gasAmount, expectTest, pass, fail, error);
 		//run each testFunction
 		let testFunctions = getTestFunctions(testModule);
-		result[testModule.fileName] = {
+		results[testModule.fileName] = {
 			expected_tests: testFunctions.length,
 			finished_tests: 0
 		};
@@ -226,14 +244,14 @@ function drawReport(fileName) {
 	let had_errors;
 	for (let functionName of file) {
 		console.log("Tested " + functionName + ":");
-		for (let assertion of result[fileName][functionName].assertions) {
+		for (let assertion of results[fileName][functionName].assertions) {
 			if (assertion.status === PASSED) {
 				logPass(assertion.message)
 			} else {
 				logFail(assertion.message)
 			}
 		}
-		for (let error of result[fileName][functionName].errors) {
+		for (let error of results[fileName][functionName].errors) {
 			had_errors = true;
 			console.log("An error occurred in " + functionName + " of " + fileName);
 			console.log(error);
@@ -286,6 +304,7 @@ function unlockAndRun(test, fileName) {
 	util.unlockAccount(node, testAccount, testPassword)
 		.then(async () => {
 			let contractInstance;
+			node.miner.start(1);
 
 			if (test.module.compileAndDeployContract instanceof Function) {
 				contractInstance = await test.module.compileAndDeployContract(testAccount, gasAmount);
@@ -300,9 +319,7 @@ function unlockAndRun(test, fileName) {
 						gas: gasAmount
 					});
 			}
-
 			try {
-				console.log('running tests in ' + test.module.fileName);
 				await runTests(test.module, contractInstance);
 				console.log('done testing ' + test.module.fileName);
 			} catch (error) {

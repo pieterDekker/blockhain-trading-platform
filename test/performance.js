@@ -1,9 +1,13 @@
 const Web3 = require('web3');
-const w3u = (new Web3()).utils;
+const kp = require('keypair');
+const testUtil = require('../test_util');
+const fs = require('fs');
+const nodeUtil = require('../node_utils');
+const node = nodeUtil.getNode();
 
-let fileName = 'traders.sol';
+let fileName = 'marketplace.sol';
 
-let includes = ['trader.sol'];
+let includes = [];
 
 let constructor_arguments = [];
 
@@ -130,64 +134,43 @@ function init(_account, _gasAmount, _expect_f, _pass_f, _fail_f, _error_f) {
 	setError(_error_f);
 }
 
-/**
- * @param contract
- */
-function testMetaTest(contract) {
-	let fn = "metaTest";
-	expect_f(fileName, fn, 2);
-	assertTrue(false, fn, "This should fail");
-	assertTrue(true, fn, "This should pass");
-}
+// async function compileAndDeployContract(account, gasAmount) {
+//
+// }
 
-/**
- * @param {Eth.Contract} contract
- */
-function testGetName(contract) {
-	let fn = "getName";
+async function testNewBid(contract) {
+	let fn = "newBid";
 	expect_f(fileName, fn, 1);
-	contract.methods.getName().call()
-		.then(name => {
-			assertTrue(name === "Trader collection", fn, "Name should be \"Trader collection\"");
-		})
-		.catch(error => {
-			error_f(fileName, fn, error)
-		});
-}
 
-function testNewTrader(contract) {
-	let fn = "newTrader";
-	expect_f(fileName, fn, 4);
-	contract.methods.newTrader("TestTrader").send({from: account, gas: gasAmount})
-		.then(() => {
-			assertTrue(true, fn, "newTrader receipt");
-			contract.methods.accountHasTrader(account).call()
-				.then(has_trader => {
-					assertTrue(has_trader, fn, "Account has trader returns " + has_trader)
-				})
-				.catch(error => {
-					error_f(fileName, fn, error);
-				});
+	const ipfs = require('../ipfs_util');
+	let ipfs_node = await ipfs.getNode();
 
-			contract.methods.getTraderForAccount(account).call()
-				.then(trader_address => {
-					assertTrue(w3u.isAddress(trader_address), fn, "getTraderForAccount returns a valid address");
-				})
-				.catch(error => {
-					error_f(fileName, fn, error);
-				});
+	let keyPair = {};
+	try {
+		keyPair.public = ipfs.getPublicKey();
+		keyPair.private = ipfs.getPrivateKey();
+	} catch (e) {
+		keyPair = kp();
+		ipfs.addPublicKey(account, keyPair.public);
+		ipfs.setPrivateKey(keyPair.private)
+	}
 
-			contract.methods.newTrader("TestTrader").send({from: account, gas: gasAmount})
-				.then(() => {
-					fail_f(fileName, fn, "Second call to newTrader with same account should have failed");
-				})
-				.catch(() => {
-					pass_f(fileName, fn, "Second call to newTrader with same account failed")
-				})
-		})
-		.catch(error => {
-			error_f(fileName, fn, error);
-		});
+
+	let calls = 1000;
+	for (let i = 0; i < calls; ++i) {
+		/** @type {Bid} */
+		let bid = {
+			type : Math.random() > 0.5 ? 1 : 0,
+			unit_price : Math.floor(Math.random() * 10000),
+			volume: Math.floor(Math.random() * 10000),
+			expires: Math.floor(Math.random() * 10000),
+			owner: account
+		};
+		let ipfsPathIn = await ipfs.storeBid(ipfs_node, bid, keyPair.private);
+		let ipfsPathBytesIn = testUtil.stringToBytes(ipfsPathIn.path);
+		contract.methods.newBid(ipfsPathBytesIn).send({from: account, gas: gasAmount});
+	}
+	pass_f(fileName, fn, "Made " + calls + " calls");
 }
 
 module.exports = {
@@ -201,7 +184,6 @@ module.exports = {
 	setAccount: setAccount,
 	setGasAmount: setGasAmount,
 	init: init,
-	testMetaTest: testMetaTest,
-	testGetName: testGetName,
-	testNewTrader: testNewTrader
+	// compileAndDeployContract: compileAndDeployContract
+	testNewBid: testNewBid
 };
