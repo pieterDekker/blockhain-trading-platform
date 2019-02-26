@@ -1,0 +1,8 @@
+version: "2"
+
+services:
+  geth_node_1:
+    build: .
+
+  geth_node_2:
+    build: .
