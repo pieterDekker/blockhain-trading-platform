@@ -1,7 +1,7 @@
 pragma solidity ^0.4.25;
 pragma experimental ABIEncoderV2;
 
-contract Bids {
+contract Marketplace {
     event NewBid(uint index);
     event NewBids(uint[] indices);
 
