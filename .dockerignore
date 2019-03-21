@@ -1,0 +1,5 @@
+/go-ethereum/
+/node_modules/
+/private_chain/
+/ipfs/
+/.git/
