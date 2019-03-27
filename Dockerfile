@@ -27,5 +27,5 @@ EXPOSE 8546 8546
 ENTRYPOINT ["./geth", "--gasprice", "0", "--datadir", "./private_chain", "--port", "30303", "--nodiscover", "--ws", "--wsport", "8546", "--wsorigins", "*", "--wsapi", "db,eth,net,web3,miner,personal", "--networkid", "230594", "--verbosity", "5", "--minerthreads", "1", "console", "2>>node_error"]
 
 #build: docker build -t geth:latest .
-#run as standalone: docker run --name geth_container -td --network host -p 30303:30303 -p 8546:8546 geth:latest
+#run as standalone: docker run --name geth_container -td --cpus=1 --network host -p 30303:30303 -p 8546:8546 geth:latest
 #attach: docker exec -it geth_container bash
