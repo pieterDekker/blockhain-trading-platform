@@ -6,10 +6,6 @@ const testUtils = require('../test_util');
 
 const node = nodeUtils.getNode();
 
-const testAccount = "0x47681d90A3B1B044980c39ed1e32D160a8043Ceb";
-const testPassword = "testaccount";
-let gasAmount = 100000000000;
-
 /**
  * @typedef {Object} Deployed
  * @property {String} fileName
@@ -35,7 +31,7 @@ function getCompiledByName(compilationOutput, name) {
 }
 
 async function deployContracts(account, passPhrase, gasAmount) {
-	await testUtils.unlockAccount(node, testAccount, testPassword);
+	await testUtils.unlockAccount(node, account, passPhrase);
 
 	node.miner.start(1);
 
@@ -64,22 +60,24 @@ async function deployContracts(account, passPhrase, gasAmount) {
 	};
 }
 
-deployContracts(testAccount, testPassword, gasAmount)
-	.then((contracts) =>{
-		console.log("contracts deployed");
-		console.log(Object.keys(contracts));
-		for (let contract in contracts) {
-			console.log(contract + " is at " + contracts[contract]._address);
-		}
-		node.miner.stop();
-		process.exit(0);
-	})
-	.catch((error) => {
-		console.log("Error in deployContracts: " + error.message);
-		console.log(error);
-		node.miner.stop();
-		process.exit(-1);
-	});
+function test() {
+	deployContracts("0x47681d90A3B1B044980c39ed1e32D160a8043Ceb", "testaccount", 100000000000)
+		.then((contracts) =>{
+			console.log("contracts deployed");
+			console.log(Object.keys(contracts));
+			for (let contract in contracts) {
+				console.log(contract + " is at " + contracts[contract]._address);
+			}
+			node.miner.stop();
+			process.exit(0);
+		})
+		.catch((error) => {
+			console.log("Error in deployContracts: " + error.message);
+			console.log(error);
+			node.miner.stop();
+			process.exit(-1);
+		});
+}
 
 module.exports = {
 	deployContracts: deployContracts
