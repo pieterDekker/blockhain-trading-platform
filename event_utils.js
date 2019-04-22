@@ -9,7 +9,6 @@ function setAccount(_account) {
 	account = _account;
 }
 
-
 function eventToTopicHash(eventName, argTypes) {
 	if (argTypes.length < 1) {
 		throw new Error("Expected at least one argument type");
@@ -31,6 +30,17 @@ let argumentTypes = {
 	NewBid: ['uint256'],
 	NewBids: ['uint256[]'],
 	NewMatch: ['uint256', 'address', 'address']
+};
+
+let names = {
+	[getTopicHash("NewLeader")]: "NewLeader",
+	[getTopicHash("NewTradeAgreement")]: "NewTradeAgreement",
+	[getTopicHash("VolumeClaimed")]: "VolumeClaimed",
+	[getTopicHash("VolumeConfirmed")]: "VolumeConfirmed",
+	[getTopicHash("NewPaymentAgreement")]: "NewPaymentAgreement",
+	[getTopicHash("NewBid")]: "NewBid",
+	[getTopicHash("NewBids")]: "NewBids",
+	[getTopicHash("NewMatch")]: "NewMatch",
 };
 
 let argumentNames = {
@@ -86,6 +96,31 @@ function parseData(data, eventName) {
 		parsedData[argNames[i]] = parse(datas[i], argTypes[i])
 	}
 	return parsedData;
+}
+
+let topicListeners = {};
+
+//Initialize topic listener arrays
+for (let eventName in argumentTypes) {
+	topicListeners[getTopicHash(eventName)] = [];
+}
+
+console.log(topicListeners);
+
+function isFunction(functionToCheck) {
+	return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}
+
+function registerTopicListener(eventName, callback) {
+	if (!isFunction(callback)) {
+		throw new Error("Cannot register " + callback + " as listener, it is not a function")
+	}
+
+	if (!getTopicHash(eventName) in topicListeners) {
+		throw new Error(eventName + " is not a known event.")
+	}
+
+	topicListeners[getTopicHash(eventName)].push(callback)
 }
 
 function handleNewTradeAgreement(event) {
@@ -149,12 +184,18 @@ handlers[getTopicHash("NewBid")] = handleNewBid;
 handlers[getTopicHash("NewBids")] = handleNewBids;
 handlers[getTopicHash("NewMatch")] = handleNewMatch;
 
+// function handleEvent(event) {
+// 	if (event.topics[0] in handlers) {
+// 		handlers[event.topics[0]](event);
+// 	} else {
+// 		console.log("No handler for topic " + event.topics[0]);
+// 		console.log(event);
+// 	}
+// }
+
 function handleEvent(event) {
-	if (event.topics[0] in handlers) {
-		handlers[event.topics[0]](event);
-	} else {
-		console.log("No handler for topic " + event.topics[0]);
-		console.log(event);
+	for (let listener of topicListeners[event.topics[0]]) {
+		listener(event);
 	}
 }
 
@@ -172,10 +213,28 @@ function dataFromReceipt(receipt, eventName) {
 	return parseData(rightEvent.raw.data, eventName);
 }
 
+// function startListening() {
+// 	node.eth.subscribe("logs", {})
+// 		.on("data", (event) => {
+// 			// handleEvent(event);
+// 			for (let listener of topicListeners[event.topics[0]]) {
+// 				listener(event);
+// 			}
+// 		})
+// 		.on("error", (error) => {
+// 			console.log("An error occurred while subscribed to 'logs' events: " + error.message);
+// 		});
+// }
+//
+// registerTopicListener("NewBid", (event) => {console.log("NewBid while listening for events")});
+//
+// startListening();
+
 module.exports = {
 	getTopicHash: getTopicHash,
 	parseData: parseData,
 	handleEvent: handleEvent,
 	setAccount: setAccount,
-	dataFromReceipt: dataFromReceipt
+	dataFromReceipt: dataFromReceipt,
+	registerTopicListener: registerTopicListener
 };
