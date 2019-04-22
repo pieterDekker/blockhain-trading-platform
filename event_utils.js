@@ -184,15 +184,6 @@ handlers[getTopicHash("NewBid")] = handleNewBid;
 handlers[getTopicHash("NewBids")] = handleNewBids;
 handlers[getTopicHash("NewMatch")] = handleNewMatch;
 
-// function handleEvent(event) {
-// 	if (event.topics[0] in handlers) {
-// 		handlers[event.topics[0]](event);
-// 	} else {
-// 		console.log("No handler for topic " + event.topics[0]);
-// 		console.log(event);
-// 	}
-// }
-
 function handleEvent(event) {
 	for (let listener of topicListeners[event.topics[0]]) {
 		listener(event);
@@ -212,23 +203,6 @@ function dataFromReceipt(receipt, eventName) {
 	}
 	return parseData(rightEvent.raw.data, eventName);
 }
-
-// function startListening() {
-// 	node.eth.subscribe("logs", {})
-// 		.on("data", (event) => {
-// 			// handleEvent(event);
-// 			for (let listener of topicListeners[event.topics[0]]) {
-// 				listener(event);
-// 			}
-// 		})
-// 		.on("error", (error) => {
-// 			console.log("An error occurred while subscribed to 'logs' events: " + error.message);
-// 		});
-// }
-//
-// registerTopicListener("NewBid", (event) => {console.log("NewBid while listening for events")});
-//
-// startListening();
 
 module.exports = {
 	getTopicHash: getTopicHash,
