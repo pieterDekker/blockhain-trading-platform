@@ -105,7 +105,7 @@ for (let eventName in argumentTypes) {
 	topicListeners[getTopicHash(eventName)] = [];
 }
 
-console.log(topicListeners);
+// console.log(topicListeners);
 
 function isFunction(functionToCheck) {
 	return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
@@ -186,7 +186,7 @@ handlers[getTopicHash("NewMatch")] = handleNewMatch;
 
 function handleEvent(event) {
 	for (let listener of topicListeners[event.topics[0]]) {
-		listener(event);
+		listener(parseData(event.data, names[event.topics[0]]), event);
 	}
 }
 
