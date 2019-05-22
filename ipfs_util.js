@@ -1,40 +1,15 @@
 let Ipfs = require('ipfs');
-let pubsub = require('pubsub-js');
 let crypto = require('crypto');
-let chalk = require('chalk');
 let keyUtils = require('./key_utils');
 
 let account = "";
 
-/** @type {boolean} Indicates wether an ipfs node is running */
-// let IPFS_UP = false;
-
-pubsub.subscribe("IPFS", (message, data) => {
-	// console.log(chalk.blue("IPFS message: ") + message + " " + data);
-	if (data === 'NODE_READY') {
-		// console.log(chalk.blue("Ipfs node ready"));
-	}
-});
-
 /** @type {Ipfs} ipfs_node */
-let ipfs_node = new Ipfs({repo: './ipfs'});
-
-ipfs_node.on('init', () => {
-	console.log(chalk.magenta("INFO: IPFS init"));
-});
-
-ipfs_node.on('start', () => {
-	console.log(chalk.magenta("INFO: IPFS start"));
-});
+let ipfs_node = new Ipfs({repo: './ipfs', silent: true});
 
 let isReady = false;
 ipfs_node.on('ready', () => {
 	isReady = true;
-	console.log(chalk.magenta("INFO: IPFS ready"));
-});
-
-ipfs_node.on('stop', () => {
-	console.log(chalk.magenta("INFO: IPFS stop"));
 });
 
 let publicKeys = {};
@@ -114,16 +89,16 @@ function cleanObject(obj) {
 async function storeObject(ipfs, obj, path="") {
 	let cleanObj = cleanObject(obj);
 	let ostr = JSON.stringify(cleanObj);
-	let obuf = ipfs.types.Buffer.from(ostr);
+	let obuf = Ipfs.Buffer.from(ostr);
 
 	if (path !== "") {
-		return ipfs.files.add({
+		return ipfs.add({
 			path: path,
 			data: obuf
 		});
 	}
 
-	return ipfs.files.add(obuf);
+	return ipfs.add(obuf);
 }
 
 /**
@@ -134,7 +109,7 @@ async function storeObject(ipfs, obj, path="") {
  */
 async function retrieveObject(ipfs, ipfsPath) {
 	return new Promise((resolve, reject) => {
-		ipfs.files.get(ipfsPath, (error, files) => {
+		ipfs.get(ipfsPath, (error, files) => {
 			if (error) {
 				reject(error);
 			}
@@ -333,9 +308,11 @@ async function retrieveTradeAgreement(ipfs, ipfsPath) {
  */
 async function getNode() {
 	return new Promise((resolve, reject) => {
-		if (isReady) resolve(ipfs_node);
+		if (isReady) {
+			resolve(ipfs_node);
+			return;
+		}
 		ipfs_node.on('ready', () => {
-			pubsub.publish('IPFS', "NODE_READY");
 			isReady = true;
 			resolve(ipfs_node);
 		});
@@ -346,7 +323,6 @@ setAccount("0x47681d90A3B1B044980c39ed1e32D160a8043Ceb");
 
 module.exports = {
 	getNode: getNode,
-	// stopNode: stopNode,
 	addPublicKey: addPublicKey,
 	getPublicKey: getPublicKey,
 	setPrivateKey: setPrivateKey,
