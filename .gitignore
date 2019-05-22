@@ -6,3 +6,5 @@ node_output
 bin/
 /ipfs
 go-ethereum
+/benchmark/*_error
+/benchmark/*_output
