@@ -119,16 +119,19 @@ function getContractName(compiled) {
 /**
  *
  * @param file
+ * @param [suppressWarnings = false]
  * @return {{abi: Object, bytecode: string}}
  */
-function compileContractFromFile(file) {
+function compileContractFromFile(file, suppressWarnings = false) {
 	// console.log(file)
 	let compiled = solc.compile(file, 1);
 	if (Array.isArray(compiled.errors) && compiled.errors.length > 0) {
 		let errors = false;
 		compiled.errors.forEach(error => {
-			console.log(error);
-			errors = !isWarning(error);
+			if (isWarning(error) && !suppressWarnings || !isWarning(error)) {
+				console.log(error)
+			}
+			if (!isWarning(error)) errors = true;
 		});
 		if (errors) {
 			throw Error("Compilation failed, see errors above")
@@ -182,31 +185,6 @@ function compileContractFromFileWithIncludes(file, includes = []) {
 		bytecode: "0x" + contract.bytecode
 	}
 }
-//
-// /**
-//  *
-//  * @param {String} byte_string
-//  */
-// function byteStringToString(byte_string) {
-// 	if (byte_string.indexOf("0x") !== 0) {
-// 		throw Error("Bytestring expected to start with '0x' (" + byte_string + ")");
-// 	}
-//
-// 	let string = "";
-// 	for (let i = 2; i < byte_string.length; i += 2) {
-// 		string += String.fromCharCode(parseInt(byte_string.substr(i,2), 16));
-// 	}
-// 	return string;
-// }
-//
-// function stringToBytes (string) {
-// 	let buffer = Buffer.from(string, 'ascii');
-// 	let bytes = [];
-// 	for (let i = 0; i < buffer.length; ++i) {
-// 		bytes.push(buffer[i]);
-// 	}
-// 	return bytes;
-// }
 
 module.exports = {
 	unlockAccount: unlockAccount,
