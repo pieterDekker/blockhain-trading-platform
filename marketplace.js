@@ -1,6 +1,7 @@
 const nodeUtils = require('./node_utils');
 const ipfsUtils = require('./ipfs_util');
 const byteUtils = require('./byte_utils');
+const web3 = require('web3');
 
 let initialized = false;
 
@@ -49,7 +50,7 @@ async function getBid(contract, id) {
 	const ipfsNode = await ipfsUtils.getNode();
 	let path = await getBidPath(contract, id);
 	let bid = await ipfsUtils.retrieveBid(ipfsNode, path);
-	bid.unitPrice = Number(bid.unitPrice);
+	bid.unit_price = Number(bid.unit_price);
 	bid.volume = Number(bid.volume);
 	bid.expires = Number(bid.expires);
 	return bid;
@@ -71,7 +72,7 @@ async function publishBid(contract, obj) {
 	const ipfsNode = await ipfsUtils.getNode();
 	let path = await ipfsUtils.storeBid(ipfsNode, obj, keyPair.private);
 	let pathBytes = byteUtils.stringToBytes(path);
-	let receipt = await contract.methods.newBid(pathBytes).send({from: account, gas: gasAmount});
+	let receipt = await contract.methods.newBid(pathBytes).send({from: account, gas: gasAmount, gasPrice: web3.utils.toWei("1", 'wei')});
 	return receipt.events.NewBid.returnValues.index;
 }
 
