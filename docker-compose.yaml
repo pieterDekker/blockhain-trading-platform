@@ -1,0 +1,21 @@
+version: "2"
+
+services:
+  geth_node:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+#    command: tail -f /dev/null
+    networks:
+      - dapp
+
+  benchmark:
+    build:
+      context: .
+      dockerfile: ./benchmark.Dockerfile
+    command: tail -f /dev/null
+    networks:
+      - dapp
+
+networks:
+  dapp:

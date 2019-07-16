@@ -1,0 +1,10 @@
+/node_modules/
+/private_chain/
+node_error
+node_output
+.idea
+bin/
+/ipfs
+go-ethereum
+/benchmark/*_error
+/benchmark/*_output
