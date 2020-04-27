@@ -1,26 +1,15 @@
-# Blockhain trading platform
+### Requirements
+Apart from the requirements listed in package.json, the following requirements have to be met:
+- Truffle v5.1.20
+- Ganache CLI v6.9.0 (ganache-core: 2.10.1)
 
-## Goal
+As a note, but not necessarily a requirement, the following versions of yarn and node are used for development:
+- Yarn v1.22.4
+- Node v13.13.0
 
-The goal of this project is to explore the feasibility of the creation of a system as described in *[reference]*
+### Running the tests
+The tests can be run by running `truffle test --network development_ganache_cli`. This expects an instance of Ganache CLI to be running and listening on the port listed under `development_ganache_cli` in truffle-config.js. 
 
-## Installation
+Running `ganache-cli -p 8545` (in a separate terminal) without any arguments should result in a Ganache CLI instance running and listening on the right port.
 
-To install the system perform the following steps:
-1. clone this repository
-2. clone *[reference]* to a place of your preference, follow the install instructions in the readme in that repository and move the resulting executable, `geth` to the root folder of your cloned repository
-3. run 
-
-## Design
-
-A detailed description of the design that led the development of this system can be found here *[reference]*
-
-# Benchmarking
-
-To get an idea how fast the system can process different amounts of transactions, a very basic benchmarking shell script was made. The script runs a different script, written in Javascript with several input sizes and writes the standard output en error streams to different files. To be able to perform a benchmark:
-1. run `geth_node.sh reinit`
-2. run `geth_node.sh run`
-3. start the miner by entering `miner.start()` in the geth console
-4. wait for the DAG to be generated, otherwise the results will be skewed by the script waiting for the node to generate the DAG 
-5. stop the miner by entering `miner.stop()` in the geth console
-6. run `benchmark_runner.sh`
+Adding a different network in truffle-config.js and using that network will allow for the tests to be run using a different network.

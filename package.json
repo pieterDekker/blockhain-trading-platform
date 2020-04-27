@@ -1,16 +1,12 @@
 {
-  "name": "trading-dapp-chain",
-  "version": "1.0.0",
   "dependencies": {
-    "chalk": "^2.4.2",
-    "crypto": "^1.0.1",
-    "ipfs": "^0.35.0",
-    "keythereum": "^1.0.4",
-    "pubsub-js": "^1.7.0",
-    "single-line-log": "^1.1.2",
-    "solc": "^0.4.25",
-    "web3": "^1.0.0-beta.36"
+    "bn": "^1.0.5"
   },
-  "license": "UNLICENSED",
-  "private": true
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.5",
+    "bn-chai": "^1.0.1",
+    "chai-bn": "^0.2.1",
+    "solidity-coverage": "^0.7.4",
+    "truffle": "^5.1.22"
+  }
 }
