@@ -13,6 +13,8 @@ contract Leadership {
 
     mapping (address => uint) private traderTicketAmount;
 
+    bool private roundInSession;
+
     mapping (address => bool) private traderInitiated;
 
     constructor () public {
@@ -100,7 +102,7 @@ contract Leadership {
     //END TICKET CODE
 
     //ROUND CODE
-    function roundIsInSession() {
+    function roundIsInSession() public view returns (bool) {
         return roundInSession;
     }
 

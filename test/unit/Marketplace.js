@@ -19,9 +19,9 @@ contract("Marketplace", async accounts => {
     traders.newTrader(accounts[0]);
     let registry = await Registry.new(
       leadership.address,
-      '0x0000000000000000000000000000000000000000',
-      '0x0000000000000000000000000000000000000000',
-      '0x0000000000000000000000000000000000000000',
+      '0x0000000000000000000000000000000000000000', // Marketplace
+      '0x0000000000000000000000000000000000000000', // PaymentAgreements
+      '0x0000000000000000000000000000000000000000', // TradeAgreements
       traders.address
     );
     instance = await Marketplace.new(true, false);
