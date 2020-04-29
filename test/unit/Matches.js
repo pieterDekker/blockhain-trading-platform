@@ -48,7 +48,7 @@ contract("Matches", async accounts => {
     await tradeAgreements.initialize(registry.address);
   });
 
-  it.skip("Should emit a NewMatch event when a match is published", async () => {
+  it("Should emit a NewMatch event when a match is published", async () => {
     let receipt = await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -61,7 +61,7 @@ contract("Matches", async accounts => {
     expectEvent(receipt, "NewMatch", {offerOwner: offerOwner, demandOwner: demandOwner});
   });
 
-  it.skip("Should return the requested match", async () => {
+  it("Should return the requested match", async () => {
     await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -83,7 +83,7 @@ contract("Matches", async accounts => {
     expect(match).to.have.property("offerOwnerAccepted", false);
   });
 
-  it.skip("Should not allow accepting by non owner", async () => {
+  it("Should not allow accepting by non owner", async () => {
     await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -97,7 +97,7 @@ contract("Matches", async accounts => {
     await expectRevert(matches.acceptDemand(0, {from: demandOwner}), "Only the owner of an offer can accept an demand")
   });
 
-  it.skip("Should allow accepting by owner", async () => {
+  it("Should allow accepting by owner", async () => {
     await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -111,7 +111,7 @@ contract("Matches", async accounts => {
     await matches.acceptDemand(0, {from: offerOwner});
   });
 
-  it.skip("Should create a trade agreement when the offer owner accepts after the demand owner accepted", async () => {
+  it("Should create a trade agreement when the offer owner accepts after the demand owner accepted", async () => {
     await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -126,7 +126,7 @@ contract("Matches", async accounts => {
     await expectEvent.inTransaction(tx, TradeAgreements, "NewTradeAgreement");
   });
 
-  it.skip("Should create a trade agreement when the demand owner accepts after the offer owner accepted", async () => {
+  it("Should create a trade agreement when the demand owner accepts after the offer owner accepted", async () => {
     await matches.publish(
       offerOwner,
       web3.utils.asciiToHex(offerPath),
@@ -141,7 +141,7 @@ contract("Matches", async accounts => {
     await expectEvent.inTransaction(tx, TradeAgreements, "NewTradeAgreement");
   });
 
-  it.skip('should publish new matches when a round ends', async () => {
+  it('should publish new matches when a round ends', async () => {
     let nMatches = 3;
     let volumes = ['100', '200', '300'];
     let unitPrices = ['10', '20', '30'];

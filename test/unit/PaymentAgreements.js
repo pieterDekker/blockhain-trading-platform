@@ -29,7 +29,13 @@ contract("PaymentAgreements", async accounts => {
 
     paymentAgreements = await PaymentAgreements.new(true, false);
     let tradeAgreements = await TradeAgreements.new(true, false);
-    let registry = await Registry.new(leadership.address, paymentAgreements.address, sender, traders.address);
+    let registry = await Registry.new(
+      leadership.address,
+      '0x0000000000000000000000000000000000000000', // Marketplace
+      paymentAgreements.address, 
+      sender, 
+      traders.address
+    );
     await paymentAgreements.initialize(registry.address);
     await tradeAgreements.initialize(registry.address);
   });
