@@ -13,3 +13,6 @@ The tests can be run by running `truffle test --network development_ganache_cli`
 Running `ganache-cli -p 8545` (in a separate terminal) without any arguments should result in a Ganache CLI instance running and listening on the right port.
 
 Adding a different network in truffle-config.js and using that network will allow for the tests to be run using a different network.
+
+### Running the benchmark
+The benchmark can be run by running `truffle --network development_geth exec benchmark/benchmark.js` (if not run from this directory, change the path to benchmark.js accordingly). For this, a geth node is expected to be running and make sure the DAG is generated already, see geth/README.md for more details.
