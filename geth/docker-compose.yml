@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  geth:
+    container_name: blockchain_trading_platform_development_geth
+    build:
+      context: .
+    image: development-geth
+    ports:
+      - "8645:8545"
+      - "8646:8546"
+    entrypoint: [
+      "geth",
+      "--datadir", "/root/geth-data-dir",
+      "--networkid", "97476571",
+      "--http",
+      "--http.api", "eth,web3,net,admin,debug,miner,personal,txpool",
+      "--http.addr", "0.0.0.0",
+      "--http.port", "8546",
+      "--http.corsdomain", "*",
+      "--http.vhosts", "*",
+      "--ws",
+      "--ws.api", "eth,web3,net,admin,debug,miner,personal,txpool",
+      "--ws.addr", "0.0.0.0",
+      "--ws.port", "8545",
+      "--miner.gasprice", "0",
+      "--txpool.pricelimit", "0",
+      "--nodiscover",
+      "--nousb",
+      "--allow-insecure-unlock",
+      "--unlock", "0xCB6134abfBDAC7ECa030f69B57fF0A56C1DD2b15,0x0c7ec8eB9f5B3682fFbAF771ee278CB1e6729274,0xED3C7c25e3237CEf14E26308C2E537E5084599FB,0x7AB6bD91587e3ecf04aF5e2bc73FCEC5fB03d6f8,0xC6a0682Ac04f00C097388553530E9f48331793e1,0x93845b1760279083c4070b50CA20260b52aE967e,0x6cd6B92853F84367B9ED63390B4C33430b05Ea18,0xa454A228c407117bf77Ed8E713c1696dD2360296,0xC5CA7bA7946f4F6b960fBB919d4Cf6D1E282e067,0x95108e0EdC0d34428DD4a35f30066DcAA5a781F4",
+      "--password", "/root/geth-data-dir/passwords.txt",
+    ]
+    # Uncomment to limit cpu usage
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'

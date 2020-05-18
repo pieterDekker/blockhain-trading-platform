@@ -1,12 +1,13 @@
 {
   "dependencies": {
-    "bn": "^1.0.5"
+    "argparse": "^1.0.10",
+    "chalk": "^4.0.0",
+    "log-update": "^4.0.0"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.5",
-    "bn-chai": "^1.0.1",
-    "chai-bn": "^0.2.1",
+    "eslint": "^7.0.0",
     "solidity-coverage": "^0.7.4",
-    "truffle": "^5.1.22"
+    "truffle": "^5.1.26"
   }
 }
